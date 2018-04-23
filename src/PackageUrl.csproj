@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/package-url/packageurl-dotnet/master/LICENSE</PackageLicenseUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://raw.githubusercontent.com/package-url/packageurl-dotnet</RepositoryUrl>
+  </PropertyGroup>
+
+</Project>
