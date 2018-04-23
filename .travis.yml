@@ -1,0 +1,7 @@
+language: csharp
+solution: PackageUrl.sln
+dotnet: 2.1.105
+mono: none
+
+script:
+  - dotnet test ./tests --configuration Release
