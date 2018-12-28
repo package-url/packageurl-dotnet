@@ -1,0 +1,48 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'vs2017-win2016'
+
+variables:
+  buildConfiguration: 'Release'
+  major: 1
+  minor: 0
+  patch: $[counter('patch', 0)]
+
+steps:
+- task: DotNetCoreCLI@2
+  inputs:
+    command: build
+    configuration: $(buildConfiguration)
+    arguments: -p:Version=$(major).$(minor).$(patch)
+- task: DotNetCoreCLI@2
+  inputs:
+    command: test
+    projects: 'tests/**/*.csproj'
+    configuration: $(buildConfiguration)
+- task: DotNetCoreCLI@2
+  inputs:
+    command: custom
+    custom: pack     
+    arguments: src/PackageUrl.csproj --output $(Build.ArtifactStagingDirectory) -p:Configuration=$(buildConfiguration) -p:Version=$(major).$(minor).$(patch) --verbosity Detailed
+# There appears to be a bug that the pack command doesn't acknowledge arguments
+#- task: DotNetCoreCLI@2
+#  inputs:
+#    command: pack
+#    configuration: $(buildConfiguration)
+#    packagesToPack: src/PackageUrl.csproj
+#    output: $(Build.ArtifactStagingDirectory)
+#    arguments: -p:Version=$(major).$(minor).$(patch)
+#    majorVersion:  $(major)
+#    minorVersion:  $(minor)
+#    patchVersion:  $(patch) 
+- task: PublishPipelineArtifact@0
+  inputs:
+    targetPath: $(Build.ArtifactStagingDirectory)
+    artifactName: PackageUrl.$(major).$(minor).$(patch)
