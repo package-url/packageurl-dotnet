@@ -1,4 +1,4 @@
-[![Unix CI](https://travis-ci.org/package-url/packageurl-dotnet.svg?branch=master)](https://travis-ci.org/package-url/packageurl-dotnet)
+[![Unix CI](https://travis-ci.com/package-url/packageurl-dotnet.svg?branch=master)](https://travis-ci.com/package-url/packageurl-dotnet)
 [![Windows Status](https://ci.appveyor.com/api/projects/status/github/package-url/packageurl-dotnet?svg=true)](https://ci.appveyor.com/project/package-url/packageurl-dotnet/branch/master)
 [![License][license-image]][license-url]
 
