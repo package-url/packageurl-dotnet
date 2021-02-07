@@ -34,6 +34,8 @@ jobs:
     
     # SemVer needs to be stored as an output variable, otherwise it cannot be used
     # by the 'gh-release' action.
+    # 'set-output' will make it the variable only available for steps in a dependent jobs.
+    # Unfortunately this newly created variable is not available in other steps of the same job.
     - name: Store SemVer
       id: gitversion
       run: |
