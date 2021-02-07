@@ -32,18 +32,12 @@ jobs:
     - name: Build
       run: dotnet build --no-restore --configuration Release
     
-    # SemVer needs to be stored as an output variable, otherwise it cannot be used
-    # by the 'gh-release' action.
-    # 'set-output' will make it the variable only available for steps in a dependent jobs.
-    # Unfortunately this newly created variable is not available in other steps of the same job.
+    # Make SemVer from GitVersion available as GitHub Action
+    # variable.
     - name: Store SemVer
       id: gitversion
       run: |
         Write-Host "::set-output name=semver::$($env:GitVersion_SemVer)"
-
-    - name: Debug CI
-      run: |
-        Write-Host "semver: ${{ steps.gitversion.outputs.semver }}"
 
     - name: Test
       run: dotnet test --no-build --verbosity normal --configuration Release
@@ -58,30 +52,17 @@ jobs:
         path: |
           nuget
 
-  release:
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    needs: build
-    defaults:
-      run:
-        shell: pwsh
-    steps:
-      - name: Download NuGet Packages
-        uses: actions/download-artifact@v2
-        with:
-          name: nuget
-
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ needs.build.outputs.semver }}
-          name: ${{ needs.build.outputs.semver }}
-          draft: true
-          prerelease: false
-          body: |
-            ${{ github.event.head_commit.message }}
-          files: |
-            **/*.nupkg
-            **/*.snupkg
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Release
+      if: github.ref == 'refs/heads/master'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.gitversion.outputs.semver }}
+        name: $${{ steps.gitversion.outputs.semver }}
+        draft: true
+        prerelease: false
+        body: |
+          ${{ github.event.head_commit.message }}
+        files: |
+          nuget/**
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
