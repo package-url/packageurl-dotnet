@@ -69,7 +69,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.build.outputs.semver }}
-          name: Release ${{ needs.build.outputs.semver }}
+          name: ${{ needs.build.outputs.semver }}
           draft: true
           prerelease: false
           body: |
