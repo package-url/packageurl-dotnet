@@ -41,6 +41,10 @@ jobs:
       run: |
         Write-Host "::set-output name=semver::$($env:GitVersion_SemVer)"
 
+    - name: Debug CI
+      run: |
+        Write-Host "semver: ${{ steps.gitversion.outputs.semver }}"
+
     - name: Test
       run: dotnet test --no-build --verbosity normal --configuration Release
     
