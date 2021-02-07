@@ -8,24 +8,40 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
+    outputs:
+      semver: ${{ steps.gitversion.outputs.semver }}
 
     steps:
     - name: Checkout
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
+    
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.x
+    
     - name: Restore dependencies
       run: dotnet restore 
+    
     - name: Build
       run: dotnet build --no-restore --configuration Release
+    
+    # SemVer needs to be stored as an output variable, otherwise it cannot be used
+    # by the 'gh-release' action.
+    - name: Store SemVer
+      id: gitversion
+      run: |
+        Write-Host "::set-output name=semver::$($env:GitVersion_SemVer)"
+
     - name: Test
       run: dotnet test --no-build --verbosity normal --configuration Release
+    
     - name: NuGet
       run: dotnet pack --no-restore --configuration Release
 
@@ -35,3 +51,31 @@ jobs:
         name: nuget
         path: |
           nuget
+
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Download NuGet Packages
+        uses: actions/download-artifact@v2
+        with:
+          name: nuget
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.build.outputs.semver }}
+          name: Release ${{ needs.build.outputs.semver }}
+          draft: true
+          prerelease: false
+          body: |
+            ${{ github.event.head_commit.message }}
+          files: |
+            **/*.nupkg
+            **/*.snupkg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
