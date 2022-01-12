@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <LangVersion>latest</LangVersion>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+
+    <!-- Strong-naming  -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)\StrongName.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+</Project>
