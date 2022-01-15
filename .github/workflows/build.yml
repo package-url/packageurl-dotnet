@@ -1,19 +1,18 @@
-name: .NET
+name: Build & Upload
 
 on:
+  workflow_call:
   push:
     branches: [ master ]
+    tags: '*'
   pull_request:
     branches: [ master ]
 
 jobs:
-  build:
+  Build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: pwsh
     outputs:
-      semver: ${{ steps.gitversion.outputs.semver }}
+      semver: ${{ steps.release.outputs.semver }}
 
     steps:
     - name: Checkout
@@ -21,49 +20,36 @@ jobs:
       with:
         fetch-depth: 0
     
-    - name: Setup .NET
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.x
+        dotnet-version: |
+          6.0.x
     
-    - name: Restore dependencies
-      run: dotnet restore 
-    
-    - name: Build
-      run: dotnet build --no-restore --configuration Release
-    
-    # Make SemVer from GitVersion available as GitHub Action
-    # variable.
-    - name: Store SemVer
-      id: gitversion
+    - name: Build & Test      
       run: |
-        Write-Host "::set-output name=semver::$($env:GitVersion_SemVer)"
+        # Workaround for https://github.com/GitTools/GitVersion/issues/2838
+        if [[ $GITHUB_REF_TYPE == tag ]]; then
+          echo Unsetting GITHUB_REF
+          unset GITHUB_REF
+        fi
+        dotnet test --configuration Release
+        dotnet pack --no-restore --configuration Release
 
-    - name: Test
-      run: dotnet test --no-build --verbosity normal --configuration Release
-    
-    - name: NuGet
-      run: dotnet pack --no-restore --configuration Release
-
-    - name: Upload NuGet Packages
+    - name: Attach NuGet Packages
       uses: actions/upload-artifact@v2
       with:
         name: nuget
         path: |
           nuget
 
-    - name: Release
-      if: github.ref == 'refs/heads/master'
-      uses: softprops/action-gh-release@v0.1.13
-      with:
-        target_commitish: ${{github.sha}}
-        tag_name: v${{ steps.gitversion.outputs.semver }}
-        name: ${{ steps.gitversion.outputs.semver }}
-        draft: true
-        prerelease: false
-        body: |
-          ${{ github.event.head_commit.message }}
-        files: |
-          nuget/**
+    - name: Release & Publish to nuget.org
+      id: release
+      if: github.event_name == 'push' && github.ref_type == 'tag'
+      run: |
+        echo 'Creating Release ${{ env.GitVersion_SemVer }}'
+        gh release create '${{ env.GitVersion_SemVer }}' ./nuget/* --target '${{ github.sha }}' --generate-notes
+        dotnet nuget push "*.nupkg" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json
       env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
