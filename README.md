@@ -1,16 +1,15 @@
-[![Unix CI](https://travis-ci.com/package-url/packageurl-dotnet.svg?branch=master)](https://travis-ci.com/package-url/packageurl-dotnet)
-[![Windows Status](https://ci.appveyor.com/api/projects/status/github/package-url/packageurl-dotnet?svg=true)](https://ci.appveyor.com/project/package-url/packageurl-dotnet/branch/master)
+![Build](https://github.com/package-url/packageurl-dotnet/actions/workflows/build.yml/badge.svg)
 [![License][license-image]][license-url]
 
 Package URL (purl) for .NET
 =========
 
-This project implements a purl parser and class for .NET.
+This project implements a purl parser and class for .NET. Its available as a [.NET Standard 2.0](https://docs.microsoft.com/en-us/dotnet/standard/net-standard) library on [NuGet.org]().
 
 Build and Test (command line)
 -------------------
 
-From root of the repository, using dotnet-cli v2.1+:
+From root of the repository, using [dotnet-cli](https://docs.microsoft.com/en-us/dotnet/core/tools/) v6.0+:
 
 ```sh
 dotnet pack -c Release
@@ -20,13 +19,13 @@ dotnet test -c Release ./tests
 Build and Test (Visual Studio)
 -------------------
 
-Open `./PackageUrl.sln` in Visual Studio 2017+, build solution and run tests using the `Test Explorer`.
+Open `./PackageUrl.sln` in Visual Studio 2022+, build solution and run tests using the `Test Explorer`.
 
 Installation
 -------------------
 
 ```sh
-dotnet add <Path-to-Project-file> package PackageUrl --version 1.0.0
+dotnet add <Path-to-Project-file> package PackageUrl
 ```
 
 or in project file, add:
