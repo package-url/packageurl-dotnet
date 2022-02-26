@@ -1,0 +1,52 @@
+name: Build & Upload
+
+on:
+  push:
+    branches: [ master ]
+    tags: '*'
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: |
+          6.0.x
+    
+    - name: Build & Test      
+      run: |
+        # Workaround for https://github.com/GitTools/GitVersion/issues/2838
+        if [[ $GITHUB_REF_TYPE == tag ]]; then
+          echo Unsetting GITHUB_REF
+          unset GITHUB_REF
+        fi
+        dotnet test --configuration Release
+        dotnet pack --no-restore --configuration Release
+
+    - name: Attach NuGet Packages
+      uses: actions/upload-artifact@v2
+      with:
+        name: nuget
+        path: |
+          nuget
+
+    - name: Release & Publish to nuget.org
+      id: release
+      if: github.event_name == 'push' && github.ref_type == 'tag'
+      run: |
+        echo 'Creating Release ${{ env.GitVersion_SemVer }}'
+        gh release create '${{ env.GitVersion_SemVer }}' ./nuget/* --target '${{ github.sha }}' --generate-notes
+        dotnet nuget push "*.nupkg" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

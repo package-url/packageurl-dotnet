@@ -1,10 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/package-url/packageurl-dotnet/master/LICENSE</PackageLicenseUrl>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://raw.githubusercontent.com/package-url/packageurl-dotnet</RepositoryUrl>
+    <!-- 
+      Package
+      https://docs.microsoft.com/en-us/nuget/reference/msbuild-targets#pack-target
+    -->
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>        
+    <PackageTags>Package URL;purl</PackageTags>
+    <PackageDescription>.NET implementation of the package url spec</PackageDescription>
+    <PackageOutputPath>../nuget</PackageOutputPath>
   </PropertyGroup>
 
 </Project>
