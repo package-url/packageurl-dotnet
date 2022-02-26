@@ -46,7 +46,7 @@ jobs:
       run: |
         echo 'Creating Release ${{ env.GitVersion_SemVer }}'
         gh release create '${{ env.GitVersion_SemVer }}' ./nuget/* --target '${{ github.sha }}' --generate-notes
-        dotnet nuget push "nuget/*.nupkg" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+        dotnet nuget push "nuget/*.nupkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
