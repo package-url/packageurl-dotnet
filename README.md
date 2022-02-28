@@ -1,10 +1,11 @@
 ![Build](https://github.com/package-url/packageurl-dotnet/actions/workflows/build.yml/badge.svg)
 [![License][license-image]][license-url]
+[![NuGet version (packageurl-dotnet)](https://img.shields.io/nuget/v/packageurl.svg?style=flat-square)](https://www.nuget.org/packages/packageurl-dotnet/)
 
 Package URL (purl) for .NET
 =========
 
-This project implements a purl parser and class for .NET. Its available as a [.NET Standard 2.0](https://docs.microsoft.com/en-us/dotnet/standard/net-standard) library on [NuGet.org]().
+This project implements a purl parser and class for .NET. Its available as a [.NET Standard 2.0](https://docs.microsoft.com/en-us/dotnet/standard/net-standard) library on [NuGet.org](https://www.nuget.org/packages/packageurl-dotnet/).
 
 Build and Test (command line)
 -------------------
@@ -51,7 +52,7 @@ License
 -------------------
 
 Permission to modify and redistribute is granted under the terms of the
-[MIT License](https://github.com/package-url/packageurl-dotnet/blob/master/LICENSE)
+[MIT License](https://github.com/package-url/packageurl-dotnet/blob/master/LICENSE).
 
 [license-image]: https://img.shields.io/badge/license-mit%20license-brightgreen.svg
 [license-url]: https://github.com/package-url/packageurl-dotnet/blob/master/LICENSE
