@@ -25,13 +25,13 @@ Installation
 -------------------
 
 ```sh
-dotnet add <Path-to-Project-file> package PackageUrl
+dotnet add <Path-to-Project-file> package packageurl-dotnet
 ```
 
 or in project file, add:
 
 ```xml
-<PackageReference Include="PackageUrl" Version="1.0.0" />
+<PackageReference Include="packageurl-dotnet" Version="1.0.0" />
 ```
 
 Usage

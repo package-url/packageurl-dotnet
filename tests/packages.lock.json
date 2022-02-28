@@ -1037,7 +1037,7 @@
           "xunit.extensibility.core": "[2.4.1]"
         }
       },
-      "packageurl": {
+      "packageurl-dotnet": {
         "type": "Project"
       }
     }
