@@ -1,6 +1,6 @@
 ![Build](https://github.com/package-url/packageurl-dotnet/actions/workflows/build.yml/badge.svg)
 [![License][license-image]][license-url]
-[![NuGet version (packageurl-dotnet)](https://img.shields.io/nuget/v/packageurl.svg?style=flat-square)](https://www.nuget.org/packages/packageurl-dotnet/)
+[![NuGet version (packageurl-dotnet)](https://img.shields.io/nuget/v/packageurl-dotnet)](https://www.nuget.org/packages/packageurl-dotnet/)
 
 Package URL (purl) for .NET
 =========
