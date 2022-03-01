@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace PackageUrl
@@ -167,7 +166,7 @@ namespace PackageUrl
             }
             return purl.ToString();
         }
-        
+
         private void Parse(string purl)
         {
             if (purl == null || string.IsNullOrWhiteSpace(purl))
