@@ -1038,7 +1038,10 @@
         }
       },
       "packageurl-dotnet": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Newtonsoft.Json": "13.0.1"
+        }
       }
     }
   }

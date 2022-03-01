@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace PackageUrl
 {
@@ -111,6 +112,7 @@ namespace PackageUrl
         /// @param qualifiers an array of key/value pair qualifiers
         /// @param subpath the subpath string
         /// <exception cref="MalformedPackageUrlException">Thrown when parsing fails.</exception>
+        [JsonConstructor]
         public PackageURL(string type, string @namespace, string name, string version, SortedDictionary<string, string> qualifiers, string subpath)
         {
             Type = ValidateType(type);
@@ -165,6 +167,26 @@ namespace PackageUrl
             return purl.ToString();
         }
 
+        /// <summary>
+        /// Converts this <see cref="PackageUrl"/> to a json string.
+        /// </summary>
+        /// <returns>A json string representing this instance of <see cref="PackageUrl"/>.</returns>
+        public string ToJson()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
+        
+        /// <summary>
+        /// Converts a json string into a <see cref="PackageURL"/>.
+        /// </summary>
+        /// <param name="json">The json string representing the <see cref="PackageURL"/>.</param>
+        /// <returns>A new <see cref="PackageURL"/> constructed from the json string.</returns>
+        /// <exception cref="InvalidCastException">If the json string cannot be deserialized into a <see cref="PackageURL"/>.</exception>
+        public static PackageURL FromJson(string json)
+        {
+            return JsonConvert.DeserializeObject<PackageURL>(json) ?? throw new InvalidCastException();
+        }
+        
         private void Parse(string purl)
         {
             if (purl == null || string.IsNullOrWhiteSpace(purl))

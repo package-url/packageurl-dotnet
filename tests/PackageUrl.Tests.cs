@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using Newtonsoft.Json;
 using PackageUrl.Tests.TestAssets;
 using Xunit;
 
@@ -78,6 +79,40 @@ namespace PackageUrl.Tests
             if (data.Qualifiers != null)
             {
                 Assert.NotNull(purl.Qualifiers);
+            }
+        }
+        
+        [Theory]
+        [InlineData("{\"Scheme\":\"pkg\",\"Type\":\"npm\",\"Namespace\":null,\"Name\":\"foo\"," +
+                    "\"Version\":\"1.2.3\",\"Qualifiers\":null,\"Subpath\":null}",
+            "pkg:npm/foo@1.2.3")]
+        public void TestJsonSerialization(string serializedPurl, string packageUrlStr)
+        {
+            PackageURL purl = new PackageURL(packageUrlStr);
+            string jsonPurl = purl.ToJson();
+
+            Assert.Equal(serializedPurl, jsonPurl);
+        }
+        
+        [Theory]
+        [InlineData("{\"Scheme\":\"pkg\",\"Type\":\"npm\",\"Namespace\":null,\"Name\":\"foo\"," +
+                    "\"Version\":\"1.2.3\",\"Qualifiers\":null,\"Subpath\":null}",
+            "pkg:npm/foo@1.2.3")]
+        public void TestJsonDeserialization(string data, string packageUrlStr)
+        {
+            PackageURL expectedPurl = new PackageURL(packageUrlStr);
+            PackageURL deserializedPurl = PackageURL.FromJson(data);
+
+            Assert.Equal(expectedPurl.ToString(), deserializedPurl.ToString());
+            Assert.Equal("pkg", deserializedPurl.Scheme);
+            Assert.Equal(expectedPurl.Type, deserializedPurl.Type);
+            Assert.Equal(expectedPurl.Namespace, deserializedPurl.Namespace);
+            Assert.Equal(expectedPurl.Name, deserializedPurl.Name);
+            Assert.Equal(expectedPurl.Version, deserializedPurl.Version);
+            Assert.Equal(expectedPurl.Subpath, deserializedPurl.Subpath);
+            if (expectedPurl.Qualifiers != null)
+            {
+                Assert.NotNull(deserializedPurl.Qualifiers);
             }
         }
     }
