@@ -167,33 +167,6 @@ namespace PackageUrl
             }
             return purl.ToString();
         }
-
-        /// <summary>
-        /// Converts this <see cref="PackageUrl"/> to a json string.
-        /// </summary>
-        /// <returns>A json string representing this instance of <see cref="PackageUrl"/>.</returns>
-        public string ToJson()
-        {
-            return JsonSerializer.Serialize(this);
-        }
-        
-        /// <summary>
-        /// Converts a json string into a <see cref="PackageURL"/>.
-        /// </summary>
-        /// <param name="json">The json string representing the <see cref="PackageURL"/>.</param>
-        /// <returns>A new <see cref="PackageURL"/> constructed from the json string.</returns>
-        /// <exception cref="InvalidCastException">If the json string cannot be deserialized into a <see cref="PackageURL"/>.</exception>
-        public static PackageURL FromJson(string json)
-        {
-            try
-            {
-                return JsonSerializer.Deserialize<PackageURL>(json) ?? throw new JsonException("The deserialized PackageURL was null.");
-            }
-            catch (Exception e)
-            {
-                throw new InvalidCastException($"Wasn't able to deserialize: {json}",e);
-            }
-        }
         
         private void Parse(string purl)
         {

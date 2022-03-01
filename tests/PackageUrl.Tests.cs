@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 using System;
+using System.Text.Json;
 using PackageUrl.Tests.TestAssets;
 using Xunit;
 
@@ -89,11 +90,11 @@ namespace PackageUrl.Tests
         public void TestJsonSerialization(string serializedPurl, string packageUrlStr)
         {
             PackageURL purl = new PackageURL(packageUrlStr);
-            string jsonPurl = purl.ToJson();
+            string jsonPurl = JsonSerializer.Serialize(purl);
 
             Assert.Equal(serializedPurl, jsonPurl);
         }
-        
+
         [Theory]
         [InlineData("{\"Scheme\":\"pkg\",\"Type\":\"npm\",\"Namespace\":null,\"Name\":\"foo\"," +
                     "\"Version\":\"1.2.3\",\"Qualifiers\":null,\"Subpath\":null}",
@@ -101,7 +102,7 @@ namespace PackageUrl.Tests
         public void TestJsonDeserialization(string data, string packageUrlStr)
         {
             PackageURL expectedPurl = new PackageURL(packageUrlStr);
-            PackageURL deserializedPurl = PackageURL.FromJson(data);
+            PackageURL deserializedPurl = JsonSerializer.Deserialize<PackageURL>(data);
 
             Assert.Equal(expectedPurl.ToString(), deserializedPurl.ToString());
             Assert.Equal("pkg", deserializedPurl.Scheme);
@@ -114,13 +115,6 @@ namespace PackageUrl.Tests
             {
                 Assert.NotNull(deserializedPurl.Qualifiers);
             }
-        }
-        
-        [Theory]
-        [InlineData("\"Type\":\"npm\",\"Name\":\"foo\",\"Version\":\"1.2.3\"}")]
-        public void TestInvalidJsonDeserialization(string data)
-        {
-            Assert.Throws<InvalidCastException>(() => PackageURL.FromJson(data));
         }
     }
 }
