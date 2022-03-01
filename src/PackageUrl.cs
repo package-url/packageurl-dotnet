@@ -23,7 +23,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PackageUrl
 {
@@ -173,7 +174,7 @@ namespace PackageUrl
         /// <returns>A json string representing this instance of <see cref="PackageUrl"/>.</returns>
         public string ToJson()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonSerializer.Serialize(this);
         }
         
         /// <summary>
@@ -184,7 +185,14 @@ namespace PackageUrl
         /// <exception cref="InvalidCastException">If the json string cannot be deserialized into a <see cref="PackageURL"/>.</exception>
         public static PackageURL FromJson(string json)
         {
-            return JsonConvert.DeserializeObject<PackageURL>(json) ?? throw new InvalidCastException();
+            try
+            {
+                return JsonSerializer.Deserialize<PackageURL>(json) ?? throw new JsonException("The deserialized PackageURL was null.");
+            }
+            catch (Exception e)
+            {
+                throw new InvalidCastException($"Wasn't able to deserialize: {json}",e);
+            }
         }
         
         private void Parse(string purl)

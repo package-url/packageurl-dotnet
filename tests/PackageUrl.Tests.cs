@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Newtonsoft.Json;
+using System;
 using PackageUrl.Tests.TestAssets;
 using Xunit;
 
@@ -114,6 +114,13 @@ namespace PackageUrl.Tests
             {
                 Assert.NotNull(deserializedPurl.Qualifiers);
             }
+        }
+        
+        [Theory]
+        [InlineData("\"Type\":\"npm\",\"Name\":\"foo\",\"Version\":\"1.2.3\"}")]
+        public void TestInvalidJsonDeserialization(string data)
+        {
+            Assert.Throws<InvalidCastException>(() => PackageURL.FromJson(data));
         }
     }
 }
