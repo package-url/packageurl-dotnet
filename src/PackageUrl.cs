@@ -255,7 +255,7 @@ namespace PackageUrl
             return type.ToLower();
         }
 
-        private static string ValidateNamespace(string @namespace)
+        private string ValidateNamespace(string @namespace)
         {
             if (@namespace == null)
             {
