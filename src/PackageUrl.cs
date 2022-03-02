@@ -261,6 +261,10 @@ namespace PackageUrl
             {
                 return null;
             }
+            if (Type == "vsm" || Type == "cran")
+            {
+                return WebUtility.UrlDecode(@namespace);
+            }
             return WebUtility.UrlDecode(@namespace.ToLower());
         }
 
