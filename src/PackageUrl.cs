@@ -263,8 +263,8 @@ namespace PackageUrl
             }
             return Type switch
             {
-                "vsm" or "cran" => WebUtility.UrlDecode(@namespace);
-                _ => WebUtility.UrlDecode(@namespace.ToLower());
+                "vsm" or "cran" => WebUtility.UrlDecode(@namespace),
+                _ => WebUtility.UrlDecode(@namespace.ToLower())
             }
         }
 
