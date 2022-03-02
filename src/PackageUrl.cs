@@ -265,7 +265,7 @@ namespace PackageUrl
             {
                 "vsm" or "cran" => WebUtility.UrlDecode(@namespace),
                 _ => WebUtility.UrlDecode(@namespace.ToLower())
-            }
+            };
         }
 
         private string ValidateName(string name)
