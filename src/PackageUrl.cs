@@ -278,6 +278,12 @@ namespace PackageUrl
             {
                 return name;
             }
+            // These repositorys are case sensitive and require the original casing.
+            // For example, the package location for cocoapods is determined by the first 3 bytes of an MD5 of the case sensitive name
+            if (Type == "cocoapods" || Type == "cpan" || Type == "vsm" || Type == "cran")
+            {
+                return name;
+            }
             return name.ToLower();
         }
 
