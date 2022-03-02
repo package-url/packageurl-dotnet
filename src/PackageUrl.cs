@@ -261,11 +261,7 @@ namespace PackageUrl
             {
                 return null;
             }
-            return Type switch
-            {
-                "vsm" or "cran" => WebUtility.UrlDecode(@namespace),
-                _ => WebUtility.UrlDecode(@namespace.ToLower())
-            };
+            return WebUtility.UrlDecode(@namespace);
         }
 
         private string ValidateName(string name)
@@ -275,12 +271,7 @@ namespace PackageUrl
             {
                 return null;
             }
-            return Type switch
-            {
-                "nuget" or "cocoapods" or "cpan" or "vsm" or "cran" => name,
-                "pypi" => name.Replace('_', '-').ToLower(),
-                _ => name.ToLower()
-            };
+            return name;
         }
 
         private static SortedDictionary<string, string> ValidateQualifiers(string qualifiers)
