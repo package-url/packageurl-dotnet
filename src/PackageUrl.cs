@@ -261,30 +261,26 @@ namespace PackageUrl
             {
                 return null;
             }
-            if (Type == "vsm" || Type == "cran")
+            return Type switch
             {
-                return WebUtility.UrlDecode(@namespace);
+                "vsm" or "cran" => WebUtility.UrlDecode(@namespace);
+                _ => WebUtility.UrlDecode(@namespace.ToLower());
             }
-            return WebUtility.UrlDecode(@namespace.ToLower());
         }
 
         private string ValidateName(string name)
         {
+
             if (name == null)
             {
-                throw new MalformedPackageUrlException("The PackageURL name specified is invalid");
+                return null;
             }
-            // These repositorys are case sensitive and require the original casing.
-            if (Type == "nuget" || Type == "cocoapods" || Type == "cpan" || Type == "vsm" || Type == "cran")
+            return Type switch
             {
-                return name;
-            }
-            if (Type == "pypi")
-            {
-                name = name.Replace('_', '-');
-            }
-            
-            return name.ToLower();
+                "nuget" or "cocoapods" or "cpan" or "vsm" or "cran" => name,
+                "pypi" => name.Replace('_', '-').ToLower(),
+                _ => name.ToLower()
+            };
         }
 
         private static SortedDictionary<string, string> ValidateQualifiers(string qualifiers)
