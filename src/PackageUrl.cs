@@ -255,13 +255,17 @@ namespace PackageUrl
             return type.ToLower();
         }
 
-        private static string ValidateNamespace(string @namespace)
+        private string ValidateNamespace(string @namespace)
         {
             if (@namespace == null)
             {
                 return null;
             }
-            return WebUtility.UrlDecode(@namespace.ToLower());
+            return Type switch
+            {
+                "vsm" or "cran" => WebUtility.UrlDecode(@namespace),
+                _ => WebUtility.UrlDecode(@namespace.ToLower())
+            };
         }
 
         private string ValidateName(string name)
@@ -270,15 +274,12 @@ namespace PackageUrl
             {
                 throw new MalformedPackageUrlException("The PackageURL name specified is invalid");
             }
-            if (Type == "pypi")
+            return Type switch
             {
-                name = name.Replace('_', '-');
-            }
-            if (Type == "nuget")
-            {
-                return name;
-            }
-            return name.ToLower();
+                "nuget" or "cocoapods" or "cpan" or "vsm" or "cran" => name,
+                "pypi" => name.Replace('_', '-').ToLower(),
+                _ => name.ToLower()
+            };
         }
 
         private static SortedDictionary<string, string> ValidateQualifiers(string qualifiers)
