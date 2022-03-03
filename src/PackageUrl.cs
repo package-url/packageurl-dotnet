@@ -270,7 +270,6 @@ namespace PackageUrl
 
         private string ValidateName(string name)
         {
-
             if (name == null)
             {
                 return null;
