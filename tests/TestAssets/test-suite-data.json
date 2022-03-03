@@ -277,5 +277,65 @@
     "qualifiers": null,
     "subpath": null,
     "is_invalid": false
+  },
+  {
+    "description": "cocoapods names are case sensitive",
+    "purl": "pkg:cocoapods/MapsIndoors@3.24.0",
+    "canonical_purl": "pkg:cocoapods/MapsIndoors@3.24.0",
+    "type": "cocoapods",
+    "namespace": null,
+    "name": "MapsIndoors",
+    "version": "3.24.0",
+    "qualifiers": null,
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
+    "description": "cpan names are case sensitive",
+    "purl": "pkg:cpan/Perl-Version@1.013",
+    "canonical_purl": "pkg:cpan/Perl-Version@1.013",
+    "type": "cpan",
+    "namespace": null,
+    "name": "Perl-Version",
+    "version": "1.013",
+    "qualifiers": null,
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
+    "description": "cran names are case sensitive",
+    "purl": "pkg:cran/MixTwice@2.0",
+    "canonical_purl": "pkg:cran/MixTwice@2.0",
+    "type": "cran",
+    "namespace": null,
+    "name": "MixTwice",
+    "version": "2.0",
+    "qualifiers": null,
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
+    "description": "Visual Studio Marketplace namespaces are case sensitive",
+    "purl": "pkg:vsm/MS-CST-E/vscode-devskim@0.6.8",
+    "canonical_purl": "pkg:vsm/MS-CST-E/vscode-devskim@0.6.8",
+    "type": "vsm",
+    "namespace": "MS-CST-E",
+    "name": "vscode-devskim",
+    "version": "0.6.8",
+    "qualifiers": null,
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
+    "description": "Visual Studio Marketplace names are case sensitive",
+    "purl": "pkg:vsm/ritwickdey/LiveServer@5.7.4",
+    "canonical_purl": "pkg:vsm/ritwickdey/LiveServer@5.7.4",
+    "type": "vsm",
+    "namespace": "ritwickdey",
+    "name": "LiveServer",
+    "version": "5.7.4",
+    "qualifiers": null,
+    "subpath": null,
+    "is_invalid": false
   }
 ]
