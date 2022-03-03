@@ -272,7 +272,7 @@ namespace PackageUrl
         {
             if (name == null)
             {
-                return null;
+                throw new MalformedPackageUrlException("The PackageURL name specified is invalid");
             }
             return Type switch
             {
