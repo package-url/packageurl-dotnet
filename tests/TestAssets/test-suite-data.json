@@ -168,6 +168,18 @@
     "is_invalid": false
   },
   {
+    "description": "npm names are case sensitive (npm only requires lowercase names for new packages)",
+    "purl": "pkg:npm/Acid@3.0.17",
+    "canonical_purl": "pkg:npm/Acid@3.0.17",
+    "type": "npm",
+    "namespace": null,
+    "name": "Acid",
+    "version": "3.0.17",
+    "qualifiers": null,
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
     "description": "nuget names are case sensitive",
     "purl": "pkg:Nuget/EnterpriseLibrary.Common@6.0.1304",
     "canonical_purl": "pkg:nuget/EnterpriseLibrary.Common@6.0.1304",
