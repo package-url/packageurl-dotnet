@@ -276,7 +276,7 @@ namespace PackageUrl
             }
             return Type switch
             {
-                "nuget" or "cocoapods" or "cpan" or "vsm" or "cran" => name,
+                "nuget" or "cocoapods" or "cpan" or "vsm" or "cran" or "npm" => name,
                 "pypi" => name.Replace('_', '-').ToLower(),
                 _ => name.ToLower()
             };
