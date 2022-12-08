@@ -140,8 +140,8 @@ namespace PackageUrl
             purl.Append('/');
             if (Namespace != null)
             {
-                purl.Append(WebUtility.UrlEncode(Namespace));
-                purl.Replace(EncodedSlash, "/");
+                string encodedNamespace = WebUtility.UrlEncode(Namespace).Replace(EncodedSlash, "/");
+                purl.Append(encodedNamespace);
                 purl.Append('/');
             }
             if (Name != null)
