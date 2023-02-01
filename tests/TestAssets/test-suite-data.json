@@ -349,5 +349,29 @@
     "qualifiers": null,
     "subpath": null,
     "is_invalid": false
+  },
+  {
+    "description": "Maven names are case sensitive",
+    "purl": "pkg:maven/com.googlecode.javaewah/JavaEWAH@1.1.12",
+    "canonical_purl": "pkg:maven/com.googlecode.javaewah/JavaEWAH@1.1.12",
+    "type": "maven",
+    "namespace": "com.googlecode.javaewah",
+    "name": "JavaEWAH",
+    "version": "1.1.12",
+    "qualifiers": null,
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
+    "description": "github namespace and name should be lowercased",
+    "purl": "pkg:github/Package-url/purl-Spec@244fd47e07d1004f0aed9c",
+    "canonical_purl": "pkg:github/package-url/purl-spec@244fd47e07d1004f0aed9c",
+    "type": "github",
+    "namespace": "package-url",
+    "name": "purl-spec",
+    "version": "244fd47e07d1004f0aed9c",
+    "qualifiers": null,
+    "subpath": null,
+    "is_invalid": false
   }
 ]
