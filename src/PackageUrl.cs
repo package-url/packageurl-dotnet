@@ -263,8 +263,8 @@ namespace PackageUrl
             }
             return Type switch
             {
-                "vsm" or "cran" => WebUtility.UrlDecode(@namespace),
-                _ => WebUtility.UrlDecode(@namespace.ToLower())
+                "bitbucket" or "github" or "pypi" or "gitlab" => WebUtility.UrlDecode(@namespace.ToLower()),
+                _ => WebUtility.UrlDecode(@namespace)
             };
         }
 
@@ -276,9 +276,9 @@ namespace PackageUrl
             }
             return Type switch
             {
-                "nuget" or "cocoapods" or "cpan" or "vsm" or "cran" or "npm" => name,
+                "bitbucket" or "github" or "gitlab" => name.ToLower(),
                 "pypi" => name.Replace('_', '-').ToLower(),
-                _ => name.ToLower()
+                _ => name
             };
         }
 
