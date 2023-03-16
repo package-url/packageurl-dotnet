@@ -42,6 +42,11 @@ namespace PackageUrl
     [Serializable]
     public sealed class PackageURL
     {
+        /// <summary>
+        /// The url encoding of /.
+        /// </summary>
+        private const string EncodedSlash = "%2F";
+
         private static readonly Regex s_typePattern = new Regex("^[a-zA-Z][a-zA-Z0-9.+-]+$", RegexOptions.Compiled);
 
         /// <summary>
@@ -135,7 +140,8 @@ namespace PackageUrl
             purl.Append('/');
             if (Namespace != null)
             {
-                purl.Append(WebUtility.UrlEncode(Namespace));
+                string encodedNamespace = WebUtility.UrlEncode(Namespace).Replace(EncodedSlash, "/");
+                purl.Append(encodedNamespace);
                 purl.Append('/');
             }
             if (Name != null)
@@ -238,7 +244,7 @@ namespace PackageUrl
                 int i;
                 for (i = 1; i < firstPartArray.Length - 2; ++i)
                 {
-                    @namespace += firstPartArray[i] + ',';
+                    @namespace += firstPartArray[i] + '/';
                 }
                 @namespace += firstPartArray[i];
 
