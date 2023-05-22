@@ -146,27 +146,31 @@ namespace PackageUrl
             }
             if (Name != null)
             {
-                purl.Append(Name);
+                string encodedName = WebUtility.UrlEncode(Name).Replace(EncodedSlash, "/");
+                purl.Append(encodedName);
             }
             if (Version != null)
             {
-                purl.Append('@').Append(Version);
+                string encodedVersion = WebUtility.UrlEncode(Version);
+                purl.Append('@').Append(encodedVersion);
             }
             if (Qualifiers != null && Qualifiers.Count > 0)
             {
                 purl.Append("?");
                 foreach (var pair in Qualifiers)
                 {
+                    string encodedValue = WebUtility.UrlEncode(pair.Value).Replace(EncodedSlash, "/");
                     purl.Append(pair.Key.ToLower());
                     purl.Append('=');
-                    purl.Append(pair.Value);
+                    purl.Append(encodedValue);
                     purl.Append('&');
                 }
                 purl.Remove(purl.Length - 1, 1);
             }
             if (Subpath != null)
             {
-                purl.Append("#").Append(Subpath);
+                string encodedSubpath = WebUtility.UrlEncode(Subpath).Replace(EncodedSlash, "/");
+                purl.Append("#").Append(encodedSubpath);
             }
             return purl.ToString();
         }
@@ -205,7 +209,7 @@ namespace PackageUrl
             if (remainder.Contains("#"))
             { // subpath is optional - check for existence
                 int index = remainder.LastIndexOf("#");
-                Subpath = ValidateSubpath(remainder.Substring(index + 1));
+                Subpath = WebUtility.UrlDecode(ValidateSubpath(remainder.Substring(index + 1)));
                 remainder = remainder.Substring(0, index);
             }
 
@@ -219,7 +223,7 @@ namespace PackageUrl
             if (remainder.Contains("@"))
             { // version is optional - check for existence
                 int index = remainder.LastIndexOf("@");
-                Version = remainder.Substring(index + 1);
+                Version = WebUtility.UrlDecode(remainder.Substring(index + 1));
                 remainder = remainder.Substring(0, index);
             }
 
@@ -235,7 +239,7 @@ namespace PackageUrl
             }
 
             Type = ValidateType(firstPartArray[0]);
-            Name = ValidateName(firstPartArray[firstPartArray.Length - 1]);
+            Name = WebUtility.UrlDecode(ValidateName(firstPartArray[firstPartArray.Length - 1]));
 
             // Test for namespaces
             if (firstPartArray.Length > 2)
@@ -248,7 +252,7 @@ namespace PackageUrl
                 }
                 @namespace += firstPartArray[i];
 
-                Namespace = ValidateNamespace(@namespace);
+                Namespace = WebUtility.UrlDecode(ValidateNamespace(@namespace));
             }
         }
 
@@ -269,8 +273,8 @@ namespace PackageUrl
             }
             return Type switch
             {
-                "bitbucket" or "github" or "pypi" or "gitlab" => WebUtility.UrlDecode(@namespace.ToLower()),
-                _ => WebUtility.UrlDecode(@namespace)
+                "bitbucket" or "github" or "pypi" or "gitlab" => @namespace.ToLower(),
+                _ => @namespace
             };
         }
 
@@ -297,7 +301,7 @@ namespace PackageUrl
                 if (pair.Contains("="))
                 {
                     string[] kvpair = pair.Split('=');
-                    list.Add(kvpair[0], kvpair[1]);
+                    list.Add(kvpair[0], WebUtility.UrlDecode(kvpair[1]));
                 }
             }
             return list;

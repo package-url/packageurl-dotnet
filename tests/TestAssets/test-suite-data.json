@@ -100,8 +100,8 @@
   },
   {
     "description": "docker uses qualifiers and hash image id as versions",
-    "purl": "pkg:docker/customer/dockerimage@sha256:244fd47e07d1004f0aed9c?repository_url=gcr.io",
-    "canonical_purl": "pkg:docker/customer/dockerimage@sha256:244fd47e07d1004f0aed9c?repository_url=gcr.io",
+    "purl": "pkg:docker/customer/dockerimage@sha256%3A244fd47e07d1004f0aed9c?repository_url=gcr.io",
+    "canonical_purl": "pkg:docker/customer/dockerimage@sha256%3A244fd47e07d1004f0aed9c?repository_url=gcr.io",
     "type": "docker",
     "namespace": "customer",
     "name": "dockerimage",
@@ -384,6 +384,42 @@
     "version": "244fd47e07d1004f0aed9c",
     "qualifiers": null,
     "subpath": null,
+    "is_invalid": false
+  },
+  {
+    "description": "valid nuget purl containing a + in version",
+    "purl": "pkg:nuget/Microsoft.NET.Sdk.MacCatalyst.Manifest-6.0.400@15.4.471%2Bsha.9382aa8e0",
+    "canonical_purl": "pkg:nuget/Microsoft.NET.Sdk.MacCatalyst.Manifest-6.0.400@15.4.471%2Bsha.9382aa8e0",
+    "type": "nuget",
+    "name": "Microsoft.NET.Sdk.MacCatalyst.Manifest-6.0.400",
+    "version": "15.4.471+sha.9382aa8e0",
+    "qualifiers": null,
+    "namespace": null,
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
+    "description": "valid maven purl containing a plus in qualifier",
+    "purl": "pkg:maven/mygroup/myartifact@1.0.0Final?mykey=my%2Bvalue",
+    "canonical_purl": "pkg:maven/mygroup/myartifact@1.0.0Final?mykey=my%2Bvalue",
+    "type": "maven",
+    "namespace": "mygroup",
+    "name": "myartifact",
+    "version": "1.0.0Final",
+    "qualifiers": { "mykey": "my+value" },
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
+    "description": "valid go purl with plus in subpath",
+    "purl": "pkg:GOLANG/google.golang.org/genproto#/google%2Bapis/api/annotations/",
+    "canonical_purl": "pkg:golang/google.golang.org/genproto#google%2Bapis/api/annotations",
+    "type": "golang",
+    "namespace": "google.golang.org",
+    "name": "genproto",
+    "version": null,
+    "qualifiers": null,
+    "subpath": "google+apis/api/annotations",
     "is_invalid": false
   }
 ]
