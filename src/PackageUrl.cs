@@ -46,6 +46,7 @@ namespace PackageUrl
         /// The url encoding of /.
         /// </summary>
         private const string EncodedSlash = "%2F";
+        private const string EncodedColon = "%3A";
 
         private static readonly Regex s_typePattern = new Regex("^[a-zA-Z][a-zA-Z0-9.+-]+$", RegexOptions.Compiled);
 
@@ -146,12 +147,12 @@ namespace PackageUrl
             }
             if (Name != null)
             {
-                string encodedName = WebUtility.UrlEncode(Name).Replace(EncodedSlash, "/");
+                string encodedName = WebUtility.UrlEncode(Name).Replace(EncodedSlash, "/").Replace(EncodedColon, ":");
                 purl.Append(encodedName);
             }
             if (Version != null)
             {
-                string encodedVersion = WebUtility.UrlEncode(Version);
+                string encodedVersion = WebUtility.UrlEncode(Version).Replace(EncodedColon, ":");
                 purl.Append('@').Append(encodedVersion);
             }
             if (Qualifiers != null && Qualifiers.Count > 0)
@@ -169,7 +170,7 @@ namespace PackageUrl
             }
             if (Subpath != null)
             {
-                string encodedSubpath = WebUtility.UrlEncode(Subpath).Replace(EncodedSlash, "/");
+                string encodedSubpath = WebUtility.UrlEncode(Subpath).Replace(EncodedSlash, "/").Replace(EncodedColon, ":");
                 purl.Append("#").Append(encodedSubpath);
             }
             return purl.ToString();
@@ -209,7 +210,7 @@ namespace PackageUrl
             if (remainder.Contains("#"))
             { // subpath is optional - check for existence
                 int index = remainder.LastIndexOf("#");
-                Subpath = WebUtility.UrlDecode(ValidateSubpath(remainder.Substring(index + 1)));
+                Subpath = ValidateSubpath(WebUtility.UrlDecode(remainder.Substring(index + 1)));
                 remainder = remainder.Substring(0, index);
             }
 
@@ -239,7 +240,7 @@ namespace PackageUrl
             }
 
             Type = ValidateType(firstPartArray[0]);
-            Name = WebUtility.UrlDecode(ValidateName(firstPartArray[firstPartArray.Length - 1]));
+            Name = ValidateName(WebUtility.UrlDecode(firstPartArray[firstPartArray.Length - 1]));
 
             // Test for namespaces
             if (firstPartArray.Length > 2)
@@ -252,7 +253,7 @@ namespace PackageUrl
                 }
                 @namespace += firstPartArray[i];
 
-                Namespace = WebUtility.UrlDecode(ValidateNamespace(@namespace));
+                Namespace = ValidateNamespace(WebUtility.UrlDecode(@namespace));
             }
         }
 
