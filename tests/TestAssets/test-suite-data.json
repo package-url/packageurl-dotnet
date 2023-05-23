@@ -421,5 +421,29 @@
     "qualifiers": null,
     "subpath": "google+apis/api/annotations",
     "is_invalid": false
+  },
+  {
+    "description": "valid go purl with colon unencoded in name, version and subpath",
+    "purl": "pkg:GOLANG/google.golang.org/gen:proto@abc:dedf#/google:apis/api/annotations/",
+    "canonical_purl": "pkg:golang/google.golang.org/gen:proto@abc:dedf#google:apis/api/annotations",
+    "type": "golang",
+    "namespace": "google.golang.org",
+    "name": "gen:proto",
+    "version": "abc:dedf",
+    "qualifiers": null,
+    "subpath": "google:apis/api/annotations",
+    "is_invalid": false
+  },
+  {
+    "description": "valid go purl with slash in name, namespace, version and qualifier",
+    "purl": "pkg:GOLANG/google.golang.org/repo/gen%2Fproto@abc%2Fdedf?repository_url=go.googlesource.com/go",
+    "canonical_purl": "pkg:golang/google.golang.org/repo/gen%2Fproto@abc%2Fdedf?repository_url=go.googlesource.com/go",
+    "type": "golang",
+    "namespace": "google.golang.org/repo",
+    "name": "gen/proto",
+    "version": "abc/dedf",
+    "qualifiers": { "repository_url": "go.googlesource.com/go" },
+    "subpath": null,
+    "is_invalid": false
   }
 ]

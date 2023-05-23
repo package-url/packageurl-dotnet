@@ -147,7 +147,7 @@ namespace PackageUrl
             }
             if (Name != null)
             {
-                string encodedName = WebUtility.UrlEncode(Name).Replace(EncodedSlash, "/").Replace(EncodedColon, ":");
+                string encodedName = WebUtility.UrlEncode(Name).Replace(EncodedColon, ":");
                 purl.Append(encodedName);
             }
             if (Version != null)
