@@ -385,5 +385,65 @@
     "qualifiers": null,
     "subpath": null,
     "is_invalid": false
+  },
+  {
+    "description": "valid nuget purl containing a + in version",
+    "purl": "pkg:nuget/Microsoft.NET.Sdk.MacCatalyst.Manifest-6.0.400@15.4.471%2Bsha.9382aa8e0",
+    "canonical_purl": "pkg:nuget/Microsoft.NET.Sdk.MacCatalyst.Manifest-6.0.400@15.4.471%2Bsha.9382aa8e0",
+    "type": "nuget",
+    "name": "Microsoft.NET.Sdk.MacCatalyst.Manifest-6.0.400",
+    "version": "15.4.471+sha.9382aa8e0",
+    "qualifiers": null,
+    "namespace": null,
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
+    "description": "valid maven purl containing a plus in qualifier",
+    "purl": "pkg:maven/mygroup/myartifact@1.0.0Final?mykey=my%2Bvalue",
+    "canonical_purl": "pkg:maven/mygroup/myartifact@1.0.0Final?mykey=my%2Bvalue",
+    "type": "maven",
+    "namespace": "mygroup",
+    "name": "myartifact",
+    "version": "1.0.0Final",
+    "qualifiers": { "mykey": "my+value" },
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
+    "description": "valid go purl with plus in subpath",
+    "purl": "pkg:GOLANG/google.golang.org/genproto#/google%2Bapis/api/annotations/",
+    "canonical_purl": "pkg:golang/google.golang.org/genproto#google%2Bapis/api/annotations",
+    "type": "golang",
+    "namespace": "google.golang.org",
+    "name": "genproto",
+    "version": null,
+    "qualifiers": null,
+    "subpath": "google+apis/api/annotations",
+    "is_invalid": false
+  },
+  {
+    "description": "valid go purl with colon unencoded in name, version and subpath",
+    "purl": "pkg:GOLANG/google.golang.org/gen:proto@abc:dedf#/google:apis/api/annotations/",
+    "canonical_purl": "pkg:golang/google.golang.org/gen:proto@abc:dedf#google:apis/api/annotations",
+    "type": "golang",
+    "namespace": "google.golang.org",
+    "name": "gen:proto",
+    "version": "abc:dedf",
+    "qualifiers": null,
+    "subpath": "google:apis/api/annotations",
+    "is_invalid": false
+  },
+  {
+    "description": "valid go purl with slash in name, namespace, version and qualifier",
+    "purl": "pkg:GOLANG/google.golang.org/repo/gen%2Fproto@abc%2Fdedf?repository_url=go.googlesource.com/go",
+    "canonical_purl": "pkg:golang/google.golang.org/repo/gen%2Fproto@abc%2Fdedf?repository_url=go.googlesource.com/go",
+    "type": "golang",
+    "namespace": "google.golang.org/repo",
+    "name": "gen/proto",
+    "version": "abc/dedf",
+    "qualifiers": { "repository_url": "go.googlesource.com/go" },
+    "subpath": null,
+    "is_invalid": false
   }
 ]

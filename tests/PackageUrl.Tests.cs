@@ -43,7 +43,6 @@ namespace PackageUrl.Tests
 
             PackageURL purl = new PackageURL(data.Purl);
             Assert.Equal(data.CanonicalPurl, purl.ToString());
-
             Assert.Equal("pkg", purl.Scheme);
             Assert.Equal(data.Type, purl.Type);
             Assert.Equal(data.Namespace, purl.Namespace);
