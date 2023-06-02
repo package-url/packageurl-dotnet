@@ -160,7 +160,7 @@ namespace PackageUrl
                 purl.Append("?");
                 foreach (var pair in Qualifiers)
                 {
-                    string encodedValue = WebUtility.UrlEncode(pair.Value).Replace(EncodedSlash, "/");
+                    string encodedValue = WebUtility.UrlEncode(pair.Value).Replace(EncodedSlash, "/").Replace(EncodedColon, ":");
                     purl.Append(pair.Key.ToLower());
                     purl.Append('=');
                     purl.Append(encodedValue);
