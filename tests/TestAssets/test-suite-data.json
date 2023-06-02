@@ -303,6 +303,20 @@
     "is_invalid": false
   },
   {
+    "description": "colons and slashes aren't escaped in qualifer values",
+    "purl": "pkg:cocoapods/MapsIndoors@3.24.0?repository_url=https://contoso.com",
+    "canonical_purl": "pkg:cocoapods/MapsIndoors@3.24.0?repository_url=https://contoso.com",
+    "type": "cocoapods",
+    "namespace": null,
+    "name": "MapsIndoors",
+    "version": "3.24.0",
+    "qualifiers": {
+      "repository_url": "https://contoso.com"
+    },
+    "subpath": null,
+    "is_invalid": false
+  },
+  {
     "description": "cocoapods names are case sensitive",
     "purl": "pkg:cocoapods/MapsIndoors@3.24.0",
     "canonical_purl": "pkg:cocoapods/MapsIndoors@3.24.0",
