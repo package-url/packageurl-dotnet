@@ -77,7 +77,7 @@ namespace PackageUrl
 
         /// <summary>
         /// Extra qualifying data for a package such as an OS, architecture, a distro, etc.
-        /// <summary>
+        /// </summary>
         public SortedDictionary<string, string> Qualifiers { get; private set; }
 
         /// <summary>
@@ -113,9 +113,8 @@ namespace PackageUrl
         /// <param name="namespace">Namespace of package (i.e. group, owner, organization).</param>
         /// <param name="name">Name of the package.</param>
         /// <param name="version">Version of the package.</param>
-        /// <param name="qualifiers"><see cref="SortedDictionary{string, string}"/> of key/value pair qualifiers.</param>
-        /// @param qualifiers an array of key/value pair qualifiers
-        /// @param subpath the subpath string
+        /// <param name="qualifiers"><see cref="SortedDictionary{TKey,TValue}"/> of key/value pair qualifiers.</param>
+        /// <param name="subpath">The subpath string.</param>
         /// <exception cref="MalformedPackageUrlException">Thrown when parsing fails.</exception>
         public PackageURL(string type, string @namespace, string name, string version, SortedDictionary<string, string> qualifiers, string subpath)
         {
