@@ -20,294 +20,185 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace PackageUrl
 {
-    /// <summary>
-    /// Provides an object representation of a Package URL and easy access to its parts.
-    ///
-    /// A purl is a URL composed of seven components:
-    /// scheme:type/namespace/name@version?qualifiers#subpath
-    ///
-    /// Components are separated by a specific character for unambiguous parsing.
-    /// A purl must NOT contain a URL Authority i.e. there is no support for username,
-    /// password, host and port components. A namespace segment may sometimes look
-    /// like a host but its interpretation is specific to a type.
-    ///
-    /// To read full-spec, visit <a href="https://github.com/package-url/purl-spec">https://github.com/package-url/purl-spec</a>
-    /// </summary>
-    [Serializable]
-    public sealed class PackageURL
+    public class PackageUrl
     {
-        /// <summary>
-        /// The url encoding of /.
-        /// </summary>
-        private const string EncodedSlash = "%2F";
-        private const string EncodedColon = "%3A";
+        private static readonly Regex SchemeRegex = new Regex(@"^[a-z][a-z0-9+.-]*$", RegexOptions.IgnoreCase);
+        private static readonly Regex TypeRegex = new Regex(@"^[a-z][a-z0-9+.-]*$", RegexOptions.IgnoreCase);
+        private static readonly Regex NameRegex = new Regex(@"^[a-zA-Z0-9_.\\-]+$", RegexOptions.Compiled);
 
-        private static readonly Regex s_typePattern = new Regex("^[a-zA-Z][a-zA-Z0-9.+-]+$", RegexOptions.Compiled);
-
-        /// <summary>
-        /// The PackageURL scheme constant.
-        /// </summary>
-        public string Scheme { get; private set; } = "pkg";
-
-        /// <summary>
-        /// The package "type" or package "protocol" such as nuget, npm, nuget, gem, pypi, etc.
-        /// </summary>
+        public string Scheme { get; private set; }
         public string Type { get; private set; }
-
-        /// <summary>
-        /// The name prefix such as a Maven groupid, a Docker image owner, a GitHub user or organization.
-        /// </summary>
         public string Namespace { get; private set; }
-
-        /// <summary>
-        /// The name of the package.
-        /// </summary>
         public string Name { get; private set; }
-
-        /// <summary>
-        /// The version of the package.
-        /// </summary>
         public string Version { get; private set; }
-
-        /// <summary>
-        /// Extra qualifying data for a package such as an OS, architecture, a distro, etc.
-        /// <summary>
-        public SortedDictionary<string, string> Qualifiers { get; private set; }
-
-        /// <summary>
-        /// Extra subpath within a package, relative to the package root.
-        /// </summary>
+        public Dictionary<string, string> Qualifiers { get; private set; }
         public string Subpath { get; private set; }
 
-        /// <summary>
-        /// Constructs a new PackageURL object by parsing the specified string.
-        /// </summary>
-        /// <param name="purl">A valid package URL string to parse.</param>
-        /// <exception cref="MalformedPackageUrlException">Thrown when parsing fails.</exception>
-        public PackageURL(string purl)
+        public PackageUrl(
+            string type,
+            string name,
+            string version = null,
+            string @namespace = null,
+            Dictionary<string, string> qualifiers = null,
+            string subpath = null,
+            string scheme = "pkg")
         {
-            Parse(purl);
-        }
-
-        /// <summary>
-        /// Constructs a new PackageURL object by specifying only the required
-        /// parameters necessary to create a valid PackageURL.
-        /// </summary>
-        /// <param name="type">Type of package (i.e. nuget, npm, gem, etc).</param>
-        /// <param name="name">Name of the package.</param>
-        /// <exception cref="MalformedPackageUrlException">Thrown when parsing fails.</exception>
-        public PackageURL(string type, string name) : this(type, null, name, null, null, null)
-        {
-        }
-
-        /// <summary>
-        /// Constructs a new PackageURL object.
-        /// </summary>
-        /// <param name="type">Type of package (i.e. nuget, npm, gem, etc).</param>
-        /// <param name="namespace">Namespace of package (i.e. group, owner, organization).</param>
-        /// <param name="name">Name of the package.</param>
-        /// <param name="version">Version of the package.</param>
-        /// <param name="qualifiers"><see cref="SortedDictionary{string, string}"/> of key/value pair qualifiers.</param>
-        /// @param qualifiers an array of key/value pair qualifiers
-        /// @param subpath the subpath string
-        /// <exception cref="MalformedPackageUrlException">Thrown when parsing fails.</exception>
-        public PackageURL(string type, string @namespace, string name, string version, SortedDictionary<string, string> qualifiers, string subpath)
-        {
+            Scheme = ValidateScheme(scheme);
             Type = ValidateType(type);
-            Namespace = ValidateNamespace(@namespace);
+            Namespace = NormalizeNamespace(@namespace);
             Name = ValidateName(name);
-            Version = version;
-            Qualifiers = qualifiers;
-            Subpath = ValidateSubpath(subpath);
+            Version = version?.Trim();
+            Qualifiers = qualifiers != null
+                ? new Dictionary<string, string>(qualifiers)
+                : new Dictionary<string, string>();
+            Subpath = NormalizeSubpath(subpath);
         }
 
-        /// <summary>
-        /// Returns a canonicalized representation of the purl.
-        /// </summary>
-        public override string ToString()
+        private static string ValidateScheme(string scheme)
         {
-            var purl = new StringBuilder();
-            purl.Append(Scheme).Append(':');
-            if (Type != null)
-            {
-                purl.Append(Type);
-            }
-            purl.Append('/');
-            if (Namespace != null)
-            {
-                string encodedNamespace = WebUtility.UrlEncode(Namespace).Replace(EncodedSlash, "/");
-                purl.Append(encodedNamespace);
-                purl.Append('/');
-            }
-            if (Name != null)
-            {
-                string encodedName = WebUtility.UrlEncode(Name).Replace(EncodedColon, ":");
-                purl.Append(encodedName);
-            }
-            if (Version != null)
-            {
-                string encodedVersion = WebUtility.UrlEncode(Version).Replace(EncodedColon, ":");
-                purl.Append('@').Append(encodedVersion);
-            }
-            if (Qualifiers != null && Qualifiers.Count > 0)
-            {
-                purl.Append("?");
-                foreach (var pair in Qualifiers)
-                {
-                    string encodedValue = WebUtility.UrlEncode(pair.Value).Replace(EncodedSlash, "/");
-                    purl.Append(pair.Key.ToLower());
-                    purl.Append('=');
-                    purl.Append(encodedValue);
-                    purl.Append('&');
-                }
-                purl.Remove(purl.Length - 1, 1);
-            }
-            if (Subpath != null)
-            {
-                string encodedSubpath = WebUtility.UrlEncode(Subpath).Replace(EncodedSlash, "/").Replace(EncodedColon, ":");
-                purl.Append("#").Append(encodedSubpath);
-            }
-            return purl.ToString();
-        }
-
-        private void Parse(string purl)
-        {
-            if (purl == null || string.IsNullOrWhiteSpace(purl))
-            {
-                throw new MalformedPackageUrlException("Invalid purl: Contains an empty or null value");
-            }
-
-            Uri uri;
-            try
-            {
-                uri = new Uri(purl);
-            }
-            catch (UriFormatException e)
-            {
-                throw new MalformedPackageUrlException("Invalid purl: " + e.Message);
-            }
-
-            // Check to ensure that none of these parts are parsed. If so, it's an invalid purl.
-            if (!string.IsNullOrEmpty(uri.UserInfo) || uri.Port != -1)
-            {
-                throw new MalformedPackageUrlException("Invalid purl: Contains parts not supported by the purl spec");
-            }
-
-            if (uri.Scheme != "pkg")
-            {
-                throw new MalformedPackageUrlException("The PackageURL scheme is invalid");
-            }
-
-            // This is the purl (minus the scheme) that needs parsed.
-            string remainder = purl.Substring(4);
-
-            if (remainder.Contains("#"))
-            { // subpath is optional - check for existence
-                int index = remainder.LastIndexOf("#");
-                Subpath = ValidateSubpath(WebUtility.UrlDecode(remainder.Substring(index + 1)));
-                remainder = remainder.Substring(0, index);
-            }
-
-            if (remainder.Contains("?"))
-            { // qualifiers are optional - check for existence
-                int index = remainder.LastIndexOf("?");
-                Qualifiers = ValidateQualifiers(remainder.Substring(index + 1));
-                remainder = remainder.Substring(0, index);
-            }
-
-            if (remainder.Contains("@"))
-            { // version is optional - check for existence
-                int index = remainder.LastIndexOf("@");
-                Version = WebUtility.UrlDecode(remainder.Substring(index + 1));
-                remainder = remainder.Substring(0, index);
-            }
-
-            // The 'remainder' should now consist of the type, an optional namespace, and the name
-
-            // Strip zero or more '/' ('type')
-            remainder = remainder.Trim('/');
-
-            string[] firstPartArray = remainder.Split('/');
-            if (firstPartArray.Length < 2)
-            { // The array must contain a 'type' and a 'name' at minimum
-                throw new MalformedPackageUrlException("Invalid purl: Does not contain a minimum of a 'type' and a 'name'");
-            }
-
-            Type = ValidateType(firstPartArray[0]);
-            Name = ValidateName(WebUtility.UrlDecode(firstPartArray[firstPartArray.Length - 1]));
-
-            // Test for namespaces
-            if (firstPartArray.Length > 2)
-            {
-                string @namespace = "";
-                int i;
-                for (i = 1; i < firstPartArray.Length - 2; ++i)
-                {
-                    @namespace += firstPartArray[i] + '/';
-                }
-                @namespace += firstPartArray[i];
-
-                Namespace = ValidateNamespace(WebUtility.UrlDecode(@namespace));
-            }
+            if (string.IsNullOrWhiteSpace(scheme) || !SchemeRegex.IsMatch(scheme))
+                throw new ArgumentException($"Invalid scheme: {scheme}");
+            return scheme.ToLowerInvariant();
         }
 
         private static string ValidateType(string type)
         {
-            if (type == null || !s_typePattern.IsMatch(type))
-            {
-                throw new MalformedPackageUrlException("The PackageURL type specified is invalid");
-            }
-            return type.ToLower();
+            if (string.IsNullOrWhiteSpace(type) || !TypeRegex.IsMatch(type))
+                throw new ArgumentException($"Invalid type: {type}");
+            return type.ToLowerInvariant();
         }
 
-        private string ValidateNamespace(string @namespace)
+        private static string ValidateName(string name)
         {
-            if (@namespace == null)
-            {
+            if (string.IsNullOrWhiteSpace(name) || !NameRegex.IsMatch(name))
+                throw new ArgumentException($"Invalid name: {name}");
+            return name;
+        }
+
+        private static string NormalizeNamespace(string ns)
+        {
+            if (string.IsNullOrWhiteSpace(ns))
                 return null;
-            }
-            return Type switch
-            {
-                "bitbucket" or "github" or "pypi" or "gitlab" => @namespace.ToLower(),
-                _ => @namespace
-            };
+
+            return ns.Replace('\\', '/').Trim('/');
         }
 
-        private string ValidateName(string name)
+        private static string NormalizeSubpath(string subpath)
         {
-            if (name == null)
-            {
-                throw new MalformedPackageUrlException("The PackageURL name specified is invalid");
-            }
-            return Type switch
-            {
-                "bitbucket" or "github" or "gitlab" => name.ToLower(),
-                "pypi" => name.Replace('_', '-').ToLower(),
-                _ => name
-            };
+            if (string.IsNullOrWhiteSpace(subpath))
+                return null;
+
+            return subpath.Replace('\\', '/').Trim('/');
         }
 
-        private static SortedDictionary<string, string> ValidateQualifiers(string qualifiers)
+        public static PackageUrl FromString(string purl)
         {
-            var list = new SortedDictionary<string, string>();
-            string[] pairs = qualifiers.Split('&');
-            foreach (var pair in pairs)
+            if (string.IsNullOrWhiteSpace(purl))
+                throw new ArgumentException("purl cannot be null or empty.");
+
+            if (!purl.StartsWith("pkg:", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Package URL must start with 'pkg:'");
+
+            string remainder = purl.Substring(4);
+            string scheme = "pkg";
+            string subpath = null;
+            string qualifiers = null;
+            string version = null;
+
+            // Extract subpath
+            var subpathSplit = remainder.Split('#');
+            if (subpathSplit.Length > 1)
             {
-                if (pair.Contains("="))
-                {
-                    string[] kvpair = pair.Split('=');
-                    list.Add(kvpair[0], WebUtility.UrlDecode(kvpair[1]));
-                }
+                remainder = subpathSplit[0];
+                subpath = subpathSplit[1];
             }
-            return list;
+
+            // Extract qualifiers
+            var qualifierSplit = remainder.Split('?');
+            if (qualifierSplit.Length > 1)
+            {
+                remainder = qualifierSplit[0];
+                qualifiers = qualifierSplit[1];
+            }
+
+            // Extract version
+            var versionSplit = remainder.Split('@');
+            if (versionSplit.Length > 1)
+            {
+                remainder = versionSplit[0];
+                version = versionSplit[1];
+            }
+
+            // Extract type / namespace / name
+            var parts = remainder.Split('/');
+            if (parts.Length < 2)
+                throw new ArgumentException($"Invalid purl: {purl}");
+
+            string type = parts[0];
+            string name;
+            string ns = null;
+
+            if (parts.Length == 2)
+                name = parts[1];
+            else
+            {
+                ns = string.Join("/", parts.Skip(1).Take(parts.Length - 2));
+                name = parts.Last();
+            }
+
+            var qualifiersDict = ParseQualifiers(qualifiers);
+
+            return new PackageUrl(type, name, version, ns, qualifiersDict, subpath, scheme);
         }
 
-        private static string ValidateSubpath(string subpath) => subpath?.Trim('/'); // leading and trailing slashes always need to be removed
+        private static Dictionary<string, string> ParseQualifiers(string qualifiers)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            if (string.IsNullOrWhiteSpace(qualifiers))
+                return dict;
+
+            foreach (var pair in qualifiers.Split('&'))
+            {
+                var kv = pair.Split('=');
+                if (kv.Length == 2)
+                    dict[kv[0].ToLowerInvariant()] = kv[1];
+            }
+
+            return dict;
+        }
+
+        public override string ToString()
+        {
+            var builder = new StringBuilder();
+            builder.Append($"{Scheme}:{Type}/");
+
+            if (!string.IsNullOrWhiteSpace(Namespace))
+                builder.Append($"{Namespace.TrimEnd('/')}/");
+
+            builder.Append(Name);
+
+            if (!string.IsNullOrWhiteSpace(Version))
+                builder.Append($"@{Version}");
+
+            if (Qualifiers?.Count > 0)
+            {
+                builder.Append("?");
+                builder.Append(string.Join("&", Qualifiers.Select(kv => $"{kv.Key}={kv.Value}")));
+            }
+
+            if (!string.IsNullOrWhiteSpace(Subpath))
+                builder.Append($"#{Subpath}");
+
+            return builder.ToString();
+        }
+
+        public string ToCoordinates() => $"{Type}/{Namespace}/{Name}@{Version}";
     }
 }
