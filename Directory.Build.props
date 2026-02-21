@@ -33,7 +33,7 @@
 
   <!-- Common references for all projects -->
   <ItemGroup>
-    <PackageReference Include="GitVersion.MsBuild" Version="5.8.1">
+    <PackageReference Include="GitVersion.MsBuild" Version="6.6.0">
       <PrivateAssets>all</PrivateAssets>      
     </PackageReference>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.103">

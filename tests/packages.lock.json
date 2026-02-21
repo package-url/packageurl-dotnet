@@ -4,9 +4,9 @@
     "net6.0": {
       "GitVersion.MsBuild": {
         "type": "Direct",
-        "requested": "[5.8.1, )",
-        "resolved": "5.8.1",
-        "contentHash": "WR+50tZK/ZO51RhcNObEZyIN+b7jt6YQOnUdrnkDhi+kPWm00TLXIUci2hGIgE617iaWdkbmkleBbIFwPhH0oQ=="
+        "requested": "[6.6.0, )",
+        "resolved": "6.6.0",
+        "contentHash": "DleYRs4QwkTFmqODJKBgQ3wRbPytZ/Zb5ZdBczUslXkAizp+2vVS+NuivgjwzZNnLKyVFa3IYUAcGbcMAgs3Ww=="
       },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
