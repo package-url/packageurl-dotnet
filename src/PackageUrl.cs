@@ -48,7 +48,10 @@ namespace PackageUrl
         private const string EncodedSlash = "%2F";
         private const string EncodedColon = "%3A";
 
-        private static readonly Regex s_typePattern = new Regex("^[a-zA-Z][a-zA-Z0-9.+-]+$", RegexOptions.Compiled);
+        private static readonly Regex s_typePattern = new Regex(
+            "^[a-zA-Z][a-zA-Z0-9.-]+$",
+            RegexOptions.Compiled
+        );
 
         /// <summary>
         /// The PackageURL scheme constant.
