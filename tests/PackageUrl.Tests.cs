@@ -73,6 +73,47 @@ namespace PackageUrl.Tests
         }
 
         [Theory]
+        [InlineData("pkg:npm/foo@1.0?123BAD!!!=value")]
+        [InlineData("pkg:npm/foo@1.0?=value")]
+        [InlineData("pkg:npm/foo@1.0?-key=value")]
+        [InlineData("pkg:npm/foo@1.0?_key=value")]
+        public void TestInvalidQualifierKeyThrows(string purl)
+        {
+            Assert.Throws<MalformedPackageUrlException>(() => new PackageURL(purl));
+        }
+
+        [Fact]
+        public void TestQualifierKeysAreLowercased()
+        {
+            var purl = new PackageURL("pkg:npm/foo@1.0?Arch=i386");
+            Assert.True(purl.Qualifiers.ContainsKey("arch"));
+            Assert.False(purl.Qualifiers.ContainsKey("Arch"));
+        }
+
+        [Fact]
+        public void TestQualifierValueContainingEquals()
+        {
+            var purl = new PackageURL("pkg:npm/foo@1.0?key=val%3Due");
+            Assert.Equal("val=ue", purl.Qualifiers["key"]);
+        }
+
+        [Fact]
+        public void TestEmptyQualifierValueIsDiscarded()
+        {
+            var purl = new PackageURL("pkg:npm/foo@1.0?empty=&arch=i386");
+            Assert.False(purl.Qualifiers.ContainsKey("empty"));
+            Assert.Equal("i386", purl.Qualifiers["arch"]);
+        }
+
+        [Fact]
+        public void TestDuplicateQualifierKeyThrows()
+        {
+            Assert.Throws<MalformedPackageUrlException>(() =>
+                new PackageURL("pkg:npm/foo@1.0?arch=i386&arch=amd64")
+            );
+        }
+
+        [Theory]
         [PurlTestData("TestAssets/test-suite-data.json")]
         public void TestConstructorParameters(PurlTestData data)
         {
