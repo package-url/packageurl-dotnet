@@ -56,6 +56,23 @@ namespace PackageUrl.Tests
         }
 
         [Theory]
+        [InlineData("pkg:some+type/name")]
+        [InlineData("pkg:some,type/name")]
+        public void TestTypeWithInvalidCharactersThrows(string purl)
+        {
+            Assert.Throws<MalformedPackageUrlException>(() => new PackageURL(purl));
+        }
+
+        [Theory]
+        [InlineData("pkg:valid-type/name")]
+        [InlineData("pkg:valid.type/name")]
+        public void TestTypeWithValidCharactersParses(string purl)
+        {
+            var parsed = new PackageURL(purl);
+            Assert.NotNull(parsed.Type);
+        }
+
+        [Theory]
         [PurlTestData("TestAssets/test-suite-data.json")]
         public void TestConstructorParameters(PurlTestData data)
         {
