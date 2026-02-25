@@ -53,6 +53,11 @@ namespace PackageUrl
             RegexOptions.Compiled
         );
 
+        private static readonly Regex s_qualifierKeyPattern = new Regex(
+            "^[a-zA-Z][a-zA-Z0-9._-]*$",
+            RegexOptions.Compiled
+        );
+
         /// <summary>
         /// The PackageURL scheme constant.
         /// </summary>
@@ -304,8 +309,30 @@ namespace PackageUrl
             {
                 if (pair.Contains("="))
                 {
-                    string[] kvpair = pair.Split('=');
-                    list.Add(kvpair[0], WebUtility.UrlDecode(kvpair[1]));
+                    string[] kvpair = pair.Split(['='], 2);
+                    string key = kvpair[0].ToLower();
+                    string value = WebUtility.UrlDecode(kvpair[1]);
+
+                    if (!s_qualifierKeyPattern.IsMatch(key))
+                    {
+                        throw new MalformedPackageUrlException(
+                            "The PackageURL qualifier key is invalid: " + key
+                        );
+                    }
+
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        continue;
+                    }
+
+                    if (list.ContainsKey(key))
+                    {
+                        throw new MalformedPackageUrlException(
+                            "The PackageURL contains duplicate qualifier key: " + key
+                        );
+                    }
+
+                    list.Add(key, value);
                 }
             }
             return list;
