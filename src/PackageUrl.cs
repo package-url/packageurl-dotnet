@@ -280,6 +280,15 @@ namespace PackageUrl
             {
                 return null;
             }
+            foreach (var segment in @namespace.Split('/'))
+            {
+                if (segment.Length == 0)
+                {
+                    throw new MalformedPackageUrlException(
+                        "The PackageURL namespace contains an empty segment"
+                    );
+                }
+            }
             return Type switch
             {
                 "bitbucket" or "github" or "pypi" or "gitlab" => @namespace.ToLower(),
@@ -289,7 +298,7 @@ namespace PackageUrl
 
         private string ValidateName(string name)
         {
-            if (name == null)
+            if (string.IsNullOrEmpty(name))
             {
                 throw new MalformedPackageUrlException("The PackageURL name specified is invalid");
             }
@@ -338,6 +347,29 @@ namespace PackageUrl
             return list;
         }
 
-        private static string ValidateSubpath(string subpath) => subpath?.Trim('/'); // leading and trailing slashes always need to be removed
+        private static string ValidateSubpath(string subpath)
+        {
+            if (subpath == null)
+            {
+                return null;
+            }
+            string[] segments = subpath.Trim('/').Split('/');
+            var validSegments = new List<string>();
+            foreach (var segment in segments)
+            {
+                if (segment.Length == 0)
+                {
+                    continue;
+                }
+                if (segment == "." || segment == "..")
+                {
+                    throw new MalformedPackageUrlException(
+                        "The PackageURL subpath contains an invalid segment: " + segment
+                    );
+                }
+                validSegments.Add(segment);
+            }
+            return validSegments.Count > 0 ? string.Join("/", validSegments) : null;
+        }
     }
 }
