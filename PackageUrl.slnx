@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/.SolutionItems/">
+    <File Path=".gitignore" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="src/PackageUrl.csproj" />
+  <Project Path="tests/PackageUrl.Tests.csproj" />
+</Solution>
