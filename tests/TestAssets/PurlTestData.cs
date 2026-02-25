@@ -22,15 +22,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Xunit;
 using Xunit.Sdk;
+using Xunit.v3;
 
 namespace PackageUrl.Tests.TestAssets
 {
     public class PurlTestData : DataAttribute
     {
         private static readonly JsonSerializer s_serializer = new JsonSerializer();
-        private static readonly Dictionary<string, IEnumerable<object[]>> s_assetsStore = new Dictionary<string, IEnumerable<object[]>>();
+        private static readonly Dictionary<
+            string,
+            IReadOnlyCollection<ITheoryDataRow>
+        > s_assetsStore = new Dictionary<string, IReadOnlyCollection<ITheoryDataRow>>();
         private readonly string _filePath;
 
         public string Description;
@@ -60,19 +66,25 @@ namespace PackageUrl.Tests.TestAssets
             _filePath = filePath;
         }
 
-        public override IEnumerable<object[]> GetData(MethodInfo testMethod)
+        public override bool SupportsDiscoveryEnumeration() => true;
+
+        public override ValueTask<IReadOnlyCollection<ITheoryDataRow>> GetData(
+            MethodInfo testMethod,
+            DisposalTracker disposalTracker
+        )
         {
             if (s_assetsStore.ContainsKey(_filePath))
             {
-                return s_assetsStore[_filePath];
+                return new ValueTask<IReadOnlyCollection<ITheoryDataRow>>(s_assetsStore[_filePath]);
             }
 
             using (var streamReader = new StreamReader(_filePath))
             {
                 var reader = new JsonTextReader(streamReader);
                 var data = s_serializer.Deserialize<PurlTestData[]>(reader);
-                s_assetsStore[_filePath] = data.Select(x => new object[] { x });
-                return s_assetsStore[_filePath];
+                s_assetsStore[_filePath] = data.Select(x => (ITheoryDataRow)new TheoryDataRow(x))
+                    .ToList();
+                return new ValueTask<IReadOnlyCollection<ITheoryDataRow>>(s_assetsStore[_filePath]);
             }
         }
     }
