@@ -110,9 +110,8 @@ namespace PackageUrl
         /// <param name="type">Type of package (i.e. nuget, npm, gem, etc).</param>
         /// <param name="name">Name of the package.</param>
         /// <exception cref="MalformedPackageUrlException">Thrown when parsing fails.</exception>
-        public PackageURL(string type, string name) : this(type, null, name, null, null, null)
-        {
-        }
+        public PackageURL(string type, string name)
+            : this(type, null, name, null, null, null) { }
 
         /// <summary>
         /// Constructs a new PackageURL object.
@@ -125,7 +124,14 @@ namespace PackageUrl
         /// @param qualifiers an array of key/value pair qualifiers
         /// @param subpath the subpath string
         /// <exception cref="MalformedPackageUrlException">Thrown when parsing fails.</exception>
-        public PackageURL(string type, string @namespace, string name, string version, SortedDictionary<string, string> qualifiers, string subpath)
+        public PackageURL(
+            string type,
+            string @namespace,
+            string name,
+            string version,
+            SortedDictionary<string, string> qualifiers,
+            string subpath
+        )
         {
             Type = ValidateType(type);
             Namespace = ValidateNamespace(@namespace);
@@ -149,7 +155,9 @@ namespace PackageUrl
             purl.Append('/');
             if (Namespace != null)
             {
-                string encodedNamespace = WebUtility.UrlEncode(Namespace).Replace(EncodedSlash, "/");
+                string encodedNamespace = WebUtility
+                    .UrlEncode(Namespace)
+                    .Replace(EncodedSlash, "/");
                 purl.Append(encodedNamespace);
                 purl.Append('/');
             }
@@ -168,7 +176,9 @@ namespace PackageUrl
                 purl.Append("?");
                 foreach (var pair in Qualifiers)
                 {
-                    string encodedValue = WebUtility.UrlEncode(pair.Value).Replace(EncodedSlash, "/");
+                    string encodedValue = WebUtility
+                        .UrlEncode(pair.Value)
+                        .Replace(EncodedSlash, "/");
                     purl.Append(pair.Key.ToLower());
                     purl.Append('=');
                     purl.Append(encodedValue);
@@ -178,7 +188,10 @@ namespace PackageUrl
             }
             if (Subpath != null)
             {
-                string encodedSubpath = WebUtility.UrlEncode(Subpath).Replace(EncodedSlash, "/").Replace(EncodedColon, ":");
+                string encodedSubpath = WebUtility
+                    .UrlEncode(Subpath)
+                    .Replace(EncodedSlash, "/")
+                    .Replace(EncodedColon, ":");
                 purl.Append("#").Append(encodedSubpath);
             }
             return purl.ToString();
@@ -188,7 +201,7 @@ namespace PackageUrl
         {
             if (purl == null || string.IsNullOrWhiteSpace(purl))
             {
-                throw new MalformedPackageUrlException("Invalid purl: Contains an empty or null value");
+                throw new MalformedPackageUrlException("The purl string is null or empty.");
             }
 
             Uri uri;
@@ -198,18 +211,22 @@ namespace PackageUrl
             }
             catch (UriFormatException e)
             {
-                throw new MalformedPackageUrlException("Invalid purl: " + e.Message);
+                throw new MalformedPackageUrlException($"Could not parse purl: {e.Message}");
             }
 
             // Check to ensure that none of these parts are parsed. If so, it's an invalid purl.
             if (!string.IsNullOrEmpty(uri.UserInfo) || uri.Port != -1)
             {
-                throw new MalformedPackageUrlException("Invalid purl: Contains parts not supported by the purl spec");
+                throw new MalformedPackageUrlException(
+                    "A purl must not contain a user, password, or port."
+                );
             }
 
             if (uri.Scheme != "pkg")
             {
-                throw new MalformedPackageUrlException("The PackageURL scheme is invalid");
+                throw new MalformedPackageUrlException(
+                    $"The purl scheme must be 'pkg', but got '{uri.Scheme}'."
+                );
             }
 
             // This is the purl (minus the scheme) that needs parsed.
@@ -244,7 +261,9 @@ namespace PackageUrl
             string[] firstPartArray = remainder.Split('/');
             if (firstPartArray.Length < 2)
             { // The array must contain a 'type' and a 'name' at minimum
-                throw new MalformedPackageUrlException("Invalid purl: Does not contain a minimum of a 'type' and a 'name'");
+                throw new MalformedPackageUrlException(
+                    "The purl must contain at least a type and a name (e.g., pkg:type/name)."
+                );
             }
 
             Type = ValidateType(firstPartArray[0]);
@@ -269,7 +288,9 @@ namespace PackageUrl
         {
             if (type == null || !s_typePattern.IsMatch(type))
             {
-                throw new MalformedPackageUrlException("The PackageURL type specified is invalid");
+                throw new MalformedPackageUrlException(
+                    "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
+                );
             }
             return type.ToLower();
         }
@@ -285,14 +306,14 @@ namespace PackageUrl
                 if (segment.Length == 0)
                 {
                     throw new MalformedPackageUrlException(
-                        "The PackageURL namespace contains an empty segment"
+                        "The purl namespace has an empty segment between '/' separators."
                     );
                 }
             }
             return Type switch
             {
                 "bitbucket" or "github" or "pypi" or "gitlab" => @namespace.ToLower(),
-                _ => @namespace
+                _ => @namespace,
             };
         }
 
@@ -300,13 +321,13 @@ namespace PackageUrl
         {
             if (string.IsNullOrEmpty(name))
             {
-                throw new MalformedPackageUrlException("The PackageURL name specified is invalid");
+                throw new MalformedPackageUrlException("The purl name must not be empty.");
             }
             return Type switch
             {
                 "bitbucket" or "github" or "gitlab" => name.ToLower(),
                 "pypi" => name.Replace('_', '-').ToLower(),
-                _ => name
+                _ => name,
             };
         }
 
@@ -325,7 +346,7 @@ namespace PackageUrl
                     if (!s_qualifierKeyPattern.IsMatch(key))
                     {
                         throw new MalformedPackageUrlException(
-                            "The PackageURL qualifier key is invalid: " + key
+                            $"Invalid purl qualifier key: '{key}'. Keys must start with a letter and contain only letters, digits, '.', '_', or '-'."
                         );
                     }
 
@@ -337,7 +358,7 @@ namespace PackageUrl
                     if (list.ContainsKey(key))
                     {
                         throw new MalformedPackageUrlException(
-                            "The PackageURL contains duplicate qualifier key: " + key
+                            $"Duplicate purl qualifier key: '{key}'."
                         );
                     }
 
@@ -364,7 +385,7 @@ namespace PackageUrl
                 if (segment == "." || segment == "..")
                 {
                     throw new MalformedPackageUrlException(
-                        "The PackageURL subpath contains an invalid segment: " + segment
+                        $"The purl subpath must not contain '.' or '..' segments, but found: '{segment}'."
                     );
                 }
                 validSegments.Add(segment);
