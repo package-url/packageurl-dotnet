@@ -114,6 +114,47 @@ namespace PackageUrl.Tests
         }
 
         [Theory]
+        [InlineData("path/./file")]
+        [InlineData("path/../file")]
+        [InlineData(".")]
+        [InlineData("..")]
+        public void TestSubpathWithDotSegmentsThrows(string subpath)
+        {
+            Assert.Throws<MalformedPackageUrlException>(() =>
+                new PackageURL("npm", null, "foo", "1.0", null, subpath)
+            );
+        }
+
+        [Theory]
+        [InlineData("path//file", "path/file")]
+        [InlineData("/path/file/", "path/file")]
+        [InlineData("///path///file///", "path/file")]
+        public void TestSubpathEmptySegmentsAreNormalized(string subpath, string expected)
+        {
+            var purl = new PackageURL("npm", null, "foo", "1.0", null, subpath);
+            Assert.Equal(expected, purl.Subpath);
+        }
+
+        [Theory]
+        [InlineData("org//pkg")]
+        [InlineData("/org/pkg")]
+        [InlineData("org/pkg/")]
+        public void TestNamespaceWithEmptySegmentThrows(string ns)
+        {
+            Assert.Throws<MalformedPackageUrlException>(() =>
+                new PackageURL("npm", ns, "foo", "1.0", null, null)
+            );
+        }
+
+        [Fact]
+        public void TestEmptyNameThrows()
+        {
+            Assert.Throws<MalformedPackageUrlException>(() =>
+                new PackageURL("npm", null, "", "1.0", null, null)
+            );
+        }
+
+        [Theory]
         [PurlTestData("TestAssets/test-suite-data.json")]
         public void TestConstructorParameters(PurlTestData data)
         {
