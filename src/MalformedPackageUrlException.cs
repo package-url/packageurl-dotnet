@@ -32,7 +32,7 @@ namespace PackageUrl
         /// specified detail message.
         /// </summary>
         //  <param name="message">The message that describes the error</param>
-        public MalformedPackageUrlException(string message) : base(message)
-        { }
+        public MalformedPackageUrlException(string message)
+            : base(message) { }
     }
 }
