@@ -317,6 +317,11 @@ public sealed class PackageURL
         {
             return null;
         }
+        @namespace = @namespace.Trim('/');
+        if (@namespace.Length == 0)
+        {
+            return null;
+        }
         foreach (var segment in @namespace.Split('/'))
         {
             if (segment.Length == 0)
