@@ -200,33 +200,53 @@ public sealed class PackageURL
             throw new MalformedPackageUrlException("The purl string is null or empty.");
         }
 
-        Uri uri;
-        try
-        {
-            uri = new Uri(purl);
-        }
-        catch (UriFormatException e)
-        {
-            throw new MalformedPackageUrlException($"Could not parse purl: {e.Message}");
-        }
-
-        // Check to ensure that none of these parts are parsed. If so, it's an invalid purl.
-        if (!string.IsNullOrEmpty(uri.UserInfo) || uri.Port != -1)
+        // Validate scheme
+        if (!purl.StartsWith("pkg:", StringComparison.OrdinalIgnoreCase))
         {
             throw new MalformedPackageUrlException(
-                "A purl must not contain a user, password, or port."
-            );
-        }
-
-        if (uri.Scheme != "pkg")
-        {
-            throw new MalformedPackageUrlException(
-                $"The purl scheme must be 'pkg', but got '{uri.Scheme}'."
+                "The purl scheme must be 'pkg'."
             );
         }
 
         // This is the purl (minus the scheme) that needs parsed.
         string remainder = purl.Substring(4);
+
+        // A purl must not contain a URL authority (no userinfo or port)
+        if (remainder.Length >= 2 && remainder[0] == '/' && remainder[1] == '/')
+        {
+            int authorityEnd = remainder.IndexOf('/', 2);
+            string authority =
+                authorityEnd == -1
+                    ? remainder.Substring(2)
+                    : remainder.Substring(2, authorityEnd - 2);
+
+            if (authority.IndexOf('@') >= 0)
+            {
+                throw new MalformedPackageUrlException(
+                    "A purl must not contain a user, password, or port."
+                );
+            }
+
+            int colonIdx = authority.LastIndexOf(':');
+            if (colonIdx >= 0 && colonIdx < authority.Length - 1)
+            {
+                bool isPort = true;
+                for (int i = colonIdx + 1; i < authority.Length; i++)
+                {
+                    if (authority[i] < '0' || authority[i] > '9')
+                    {
+                        isPort = false;
+                        break;
+                    }
+                }
+                if (isPort)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A purl must not contain a user, password, or port."
+                    );
+                }
+            }
+        }
 
         if (remainder.Contains("#"))
         { // subpath is optional - check for existence
