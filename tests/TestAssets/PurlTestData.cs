@@ -28,64 +28,61 @@ using Xunit;
 using Xunit.Sdk;
 using Xunit.v3;
 
-namespace PackageUrl.Tests.TestAssets
+namespace PackageUrl.Tests.TestAssets;
+
+public class PurlTestData : DataAttribute
 {
-    public class PurlTestData : DataAttribute
+    private static readonly JsonSerializer s_serializer = new JsonSerializer();
+    private static readonly Dictionary<string, IReadOnlyCollection<ITheoryDataRow>> s_assetsStore =
+        new Dictionary<string, IReadOnlyCollection<ITheoryDataRow>>();
+    private readonly string _filePath;
+
+    public string Description;
+
+    public string Purl;
+
+    [JsonProperty("canonical_purl")]
+    public string CanonicalPurl;
+
+    public string Type;
+
+    public string Namespace;
+
+    public string Name;
+
+    public string Version;
+
+    public SortedDictionary<string, string> Qualifiers;
+
+    public string Subpath;
+
+    [JsonProperty("is_invalid")]
+    public bool IsInvalid;
+
+    public PurlTestData(string filePath)
     {
-        private static readonly JsonSerializer s_serializer = new JsonSerializer();
-        private static readonly Dictionary<
-            string,
-            IReadOnlyCollection<ITheoryDataRow>
-        > s_assetsStore = new Dictionary<string, IReadOnlyCollection<ITheoryDataRow>>();
-        private readonly string _filePath;
+        _filePath = filePath;
+    }
 
-        public string Description;
+    public override bool SupportsDiscoveryEnumeration() => true;
 
-        public string Purl;
-
-        [JsonProperty("canonical_purl")]
-        public string CanonicalPurl;
-
-        public string Type;
-
-        public string Namespace;
-
-        public string Name;
-
-        public string Version;
-
-        public SortedDictionary<string, string> Qualifiers;
-
-        public string Subpath;
-
-        [JsonProperty("is_invalid")]
-        public bool IsInvalid;
-
-        public PurlTestData(string filePath)
+    public override ValueTask<IReadOnlyCollection<ITheoryDataRow>> GetData(
+        MethodInfo testMethod,
+        DisposalTracker disposalTracker
+    )
+    {
+        if (s_assetsStore.ContainsKey(_filePath))
         {
-            _filePath = filePath;
+            return new ValueTask<IReadOnlyCollection<ITheoryDataRow>>(s_assetsStore[_filePath]);
         }
 
-        public override bool SupportsDiscoveryEnumeration() => true;
-
-        public override ValueTask<IReadOnlyCollection<ITheoryDataRow>> GetData(
-            MethodInfo testMethod,
-            DisposalTracker disposalTracker
-        )
+        using (var streamReader = new StreamReader(_filePath))
         {
-            if (s_assetsStore.ContainsKey(_filePath))
-            {
-                return new ValueTask<IReadOnlyCollection<ITheoryDataRow>>(s_assetsStore[_filePath]);
-            }
-
-            using (var streamReader = new StreamReader(_filePath))
-            {
-                var reader = new JsonTextReader(streamReader);
-                var data = s_serializer.Deserialize<PurlTestData[]>(reader);
-                s_assetsStore[_filePath] = data.Select(x => (ITheoryDataRow)new TheoryDataRow(x))
-                    .ToList();
-                return new ValueTask<IReadOnlyCollection<ITheoryDataRow>>(s_assetsStore[_filePath]);
-            }
+            var reader = new JsonTextReader(streamReader);
+            var data = s_serializer.Deserialize<PurlTestData[]>(reader);
+            s_assetsStore[_filePath] = data.Select(x => (ITheoryDataRow)new TheoryDataRow(x))
+                .ToList();
+            return new ValueTask<IReadOnlyCollection<ITheoryDataRow>>(s_assetsStore[_filePath]);
         }
     }
 }
