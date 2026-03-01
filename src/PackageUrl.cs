@@ -40,7 +40,7 @@ namespace PackageUrl;
 /// To read full-spec, visit <a href="https://github.com/package-url/purl-spec">https://github.com/package-url/purl-spec</a>
 /// </summary>
 [Serializable]
-public sealed class PackageURL
+public sealed class PackageURL : IEquatable<PackageURL>
 {
     /// <summary>
     /// The url encoding of /.
@@ -192,6 +192,25 @@ public sealed class PackageURL
         }
         return purl.ToString();
     }
+
+    /// <inheritdoc />
+    public bool Equals(PackageURL other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return string.Equals(ToString(), other.ToString(), StringComparison.Ordinal);
+    }
+
+    /// <inheritdoc />
+    public override bool Equals(object obj) => Equals(obj as PackageURL);
+
+    /// <inheritdoc />
+    public override int GetHashCode() => ToString().GetHashCode();
+
+    public static bool operator ==(PackageURL left, PackageURL right) =>
+        left is null ? right is null : left.Equals(right);
+
+    public static bool operator !=(PackageURL left, PackageURL right) => !(left == right);
 
     private void Parse(string purl)
     {
