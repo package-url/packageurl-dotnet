@@ -13,7 +13,7 @@
     <!-- Enable lock file -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 
-    <!-- 
+    <!--
       Source Link
       https://github.com/dotnet/sourcelink
     -->
@@ -22,8 +22,8 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
-    
-  <!-- 
+
+  <!--
     Deterministic Builds
     https://devblogs.microsoft.com/dotnet/producing-packages-with-source-link/
   -->
@@ -33,12 +33,11 @@
 
   <!-- Common references for all projects -->
   <ItemGroup>
-    <PackageReference Include="GitVersion.MsBuild" Version="5.8.1">
-      <PrivateAssets>all</PrivateAssets>      
+    <PackageReference Include="GitVersion.MsBuild">
+      <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.103">
-      <PrivateAssets>all</PrivateAssets>      
+    <PackageReference Include="Microsoft.SourceLink.GitHub">
+      <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
-
 </Project>
