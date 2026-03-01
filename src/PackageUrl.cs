@@ -42,12 +42,6 @@ namespace PackageUrl;
 [Serializable]
 public sealed class PackageURL
 {
-    /// <summary>
-    /// The url encoding of /.
-    /// </summary>
-    private const string EncodedSlash = "%2F";
-    private const string EncodedColon = "%3A";
-
     private static readonly Regex s_typePattern = new Regex(
         "^[a-zA-Z][a-zA-Z0-9.-]+$",
         RegexOptions.Compiled
@@ -155,18 +149,18 @@ public sealed class PackageURL
         purl.Append('/');
         if (Namespace != null)
         {
-            string encodedNamespace = WebUtility.UrlEncode(Namespace).Replace(EncodedSlash, "/");
+            string encodedNamespace = PercentEncode(Namespace, "/");
             purl.Append(encodedNamespace);
             purl.Append('/');
         }
         if (Name != null)
         {
-            string encodedName = WebUtility.UrlEncode(Name).Replace(EncodedColon, ":");
+            string encodedName = PercentEncode(Name, ":");
             purl.Append(encodedName);
         }
         if (Version != null)
         {
-            string encodedVersion = WebUtility.UrlEncode(Version).Replace(EncodedColon, ":");
+            string encodedVersion = PercentEncode(Version, ":");
             purl.Append('@').Append(encodedVersion);
         }
         if (Qualifiers != null && Qualifiers.Count > 0)
@@ -174,7 +168,7 @@ public sealed class PackageURL
             purl.Append("?");
             foreach (var pair in Qualifiers)
             {
-                string encodedValue = WebUtility.UrlEncode(pair.Value).Replace(EncodedSlash, "/");
+                string encodedValue = PercentEncode(pair.Value, "/");
                 purl.Append(pair.Key.ToLower());
                 purl.Append('=');
                 purl.Append(encodedValue);
@@ -184,13 +178,37 @@ public sealed class PackageURL
         }
         if (Subpath != null)
         {
-            string encodedSubpath = WebUtility
-                .UrlEncode(Subpath)
-                .Replace(EncodedSlash, "/")
-                .Replace(EncodedColon, ":");
+            string encodedSubpath = PercentEncode(Subpath, "/:");
             purl.Append("#").Append(encodedSubpath);
         }
         return purl.ToString();
+    }
+
+    /// <summary>
+    /// Percent-encodes a string per RFC 3986 §2.1 using the PURL allowed set.
+    /// Characters in the allowed set (alphanumeric plus .-_~) are not encoded.
+    /// Characters listed in <paramref name="preserve"/> are also kept unencoded.
+    /// </summary>
+    private static string PercentEncode(string value, string preserve = null)
+    {
+        var sb = new StringBuilder();
+        byte[] bytes = Encoding.UTF8.GetBytes(value);
+        foreach (byte b in bytes)
+        {
+            char c = (char)b;
+            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')
+                || c == '.' || c == '-' || c == '_' || c == '~'
+                || (preserve != null && preserve.IndexOf(c) >= 0))
+            {
+                sb.Append(c);
+            }
+            else
+            {
+                sb.Append('%');
+                sb.Append(b.ToString("X2"));
+            }
+        }
+        return sb.ToString();
     }
 
     private void Parse(string purl)
