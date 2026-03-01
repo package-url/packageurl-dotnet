@@ -20,19 +20,18 @@
 
 using System;
 
-namespace PackageUrl
+namespace PackageUrl;
+
+/// <summary>
+/// Exception class intended to be used for PackageURL parsing exceptions.
+/// </summary>
+public class MalformedPackageUrlException : Exception
 {
     /// <summary>
-    /// Exception class intended to be used for PackageURL parsing exceptions.
+    /// Constructs a <see cref="MalformedPackageUrlException" /> with the
+    /// specified detail message.
     /// </summary>
-    public class MalformedPackageUrlException : Exception
-    {
-        /// <summary>
-        /// Constructs a <see cref="MalformedPackageUrlException" /> with the
-        /// specified detail message.
-        /// </summary>
-        //  <param name="message">The message that describes the error</param>
-        public MalformedPackageUrlException(string message)
-            : base(message) { }
-    }
+    //  <param name="message">The message that describes the error</param>
+    public MalformedPackageUrlException(string message)
+        : base(message) { }
 }
