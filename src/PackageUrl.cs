@@ -140,7 +140,12 @@ public sealed class PackageURL : IEquatable<PackageURL>
     /// </summary>
     public override string ToString()
     {
-        var purl = new StringBuilder();
+        int capacity = 4 + 1; // "pkg:"  + "/"
+        if (Type != null) capacity += Type.Length;
+        if (Namespace != null) capacity += Namespace.Length + 1;
+        if (Name != null) capacity += Name.Length;
+        if (Version != null) capacity += Version.Length + 1;
+        var purl = new StringBuilder(capacity);
         purl.Append(Scheme).Append(':');
         if (Type != null)
         {
