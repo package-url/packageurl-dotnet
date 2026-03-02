@@ -217,7 +217,33 @@ public sealed class PackageURL : IEquatable<PackageURL>
     /// </summary>
     private static string PercentEncode(string value, string preserve = null)
     {
-        var sb = new StringBuilder();
+        // Fast path: check if encoding is needed at all
+        bool needsEncoding = false;
+        for (int i = 0; i < value.Length; i++)
+        {
+            char c = value[i];
+            if (
+                (c >= 'A' && c <= 'Z')
+                || (c >= 'a' && c <= 'z')
+                || (c >= '0' && c <= '9')
+                || c == '.'
+                || c == '-'
+                || c == '_'
+                || c == '~'
+                || (preserve != null && preserve.IndexOf(c) >= 0)
+            )
+            {
+                continue;
+            }
+            needsEncoding = true;
+            break;
+        }
+        if (!needsEncoding)
+        {
+            return value;
+        }
+
+        var sb = new StringBuilder(value.Length);
         byte[] bytes = Encoding.UTF8.GetBytes(value);
         foreach (byte b in bytes)
         {
