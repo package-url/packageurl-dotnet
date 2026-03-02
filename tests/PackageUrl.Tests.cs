@@ -137,13 +137,20 @@ public class PackageURLTest
 
     [Theory]
     [InlineData("org//pkg")]
-    [InlineData("/org/pkg")]
-    [InlineData("org/pkg/")]
     public void TestNamespaceWithEmptySegmentThrows(string ns)
     {
         Assert.Throws<MalformedPackageUrlException>(() =>
             new PackageURL("npm", ns, "foo", "1.0", null, null)
         );
+    }
+
+    [Theory]
+    [InlineData("/org/pkg", "org/pkg")]
+    [InlineData("org/pkg/", "org/pkg")]
+    public void TestNamespaceLeadingTrailingSlashesAreStripped(string ns, string expected)
+    {
+        var purl = new PackageURL("npm", ns, "foo", "1.0", null, null);
+        Assert.Equal(expected, purl.Namespace);
     }
 
     [Fact]
