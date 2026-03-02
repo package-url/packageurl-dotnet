@@ -27,17 +27,20 @@ using System.Text.RegularExpressions;
 namespace PackageUrl;
 
 /// <summary>
-/// Provides an object representation of a Package URL and easy access to its parts.
-///
-/// A purl is a URL composed of seven components:
-/// scheme:type/namespace/name@version?qualifiers#subpath
-///
-/// Components are separated by a specific character for unambiguous parsing.
-/// A purl must NOT contain a URL Authority i.e. there is no support for username,
-/// password, host and port components. A namespace segment may sometimes look
-/// like a host but its interpretation is specific to a type.
-///
-/// To read full-spec, visit <a href="https://github.com/package-url/purl-spec">https://github.com/package-url/purl-spec</a>
+/// Represents a Package URL (PURL) as defined by ECMA-427.
+/// <para>
+/// A PURL is a URL composed of seven components:
+/// <c>scheme:type/namespace/name@version?qualifiers#subpath</c>
+/// </para>
+/// <para>
+/// Components are separated by specific characters for unambiguous parsing.
+/// A PURL does not contain a URL Authority; there is no support for username,
+/// password, host, or port components. A namespace segment may look like a host,
+/// but its interpretation is specific to the type.
+/// </para>
+/// <para>
+/// See <see href="https://ecma-tc54.github.io/ECMA-427/">ECMA-427</see> for the full specification.
+/// </para>
 /// </summary>
 [Serializable]
 public sealed class PackageURL : IEquatable<PackageURL>
@@ -53,17 +56,18 @@ public sealed class PackageURL : IEquatable<PackageURL>
     );
 
     /// <summary>
-    /// The PackageURL scheme constant.
+    /// The URL scheme. Always <c>"pkg"</c>.
     /// </summary>
     public string Scheme { get; private set; } = "pkg";
 
     /// <summary>
-    /// The package "type" or package "protocol" such as nuget, npm, nuget, gem, pypi, etc.
+    /// The package type, such as npm, nuget, gem, or pypi. The canonical form is lowercase.
     /// </summary>
     public string Type { get; private set; }
 
     /// <summary>
-    /// The name prefix such as a Maven groupid, a Docker image owner, a GitHub user or organization.
+    /// A type-specific name prefix, such as a Maven groupId, a Docker image owner,
+    /// or a GitHub user or organization. May be <see langword="null"/>.
     /// </summary>
     public string Namespace { get; private set; }
 
@@ -73,51 +77,50 @@ public sealed class PackageURL : IEquatable<PackageURL>
     public string Name { get; private set; }
 
     /// <summary>
-    /// The version of the package.
+    /// The version of the package, or <see langword="null"/> if unspecified.
     /// </summary>
     public string Version { get; private set; }
 
     /// <summary>
-    /// Extra qualifying data for a package such as an OS, architecture, a distro, etc.
-    /// <summary>
+    /// Qualifier key/value pairs for the package, such as OS, architecture, or distribution.
+    /// May be <see langword="null"/>.
+    /// </summary>
     public SortedDictionary<string, string> Qualifiers { get; private set; }
 
     /// <summary>
-    /// Extra subpath within a package, relative to the package root.
+    /// A path relative to the package root, or <see langword="null"/> if unspecified.
     /// </summary>
     public string Subpath { get; private set; }
 
     /// <summary>
-    /// Constructs a new PackageURL object by parsing the specified string.
+    /// Parses <paramref name="purl"/> into a new <see cref="PackageURL"/>.
     /// </summary>
-    /// <param name="purl">A valid package URL string to parse.</param>
-    /// <exception cref="MalformedPackageUrlException">Thrown when parsing fails.</exception>
+    /// <param name="purl">A valid Package URL string (e.g. <c>"pkg:npm/foobar@12.3.1"</c>).</param>
+    /// <exception cref="MalformedPackageUrlException">Thrown if <paramref name="purl"/> is not a valid Package URL.</exception>
     public PackageURL(string purl)
     {
         Parse(purl);
     }
 
     /// <summary>
-    /// Constructs a new PackageURL object by specifying only the required
-    /// parameters necessary to create a valid PackageURL.
+    /// Creates a <see cref="PackageURL"/> with only the required type and name components.
     /// </summary>
-    /// <param name="type">Type of package (i.e. nuget, npm, gem, etc).</param>
-    /// <param name="name">Name of the package.</param>
-    /// <exception cref="MalformedPackageUrlException">Thrown when parsing fails.</exception>
+    /// <param name="type">The package type (e.g. nuget, npm, gem).</param>
+    /// <param name="name">The package name.</param>
+    /// <exception cref="MalformedPackageUrlException">Thrown if <paramref name="type"/> or <paramref name="name"/> is invalid.</exception>
     public PackageURL(string type, string name)
         : this(type, null, name, null, null, null) { }
 
     /// <summary>
-    /// Constructs a new PackageURL object.
+    /// Creates a <see cref="PackageURL"/> from individual components.
     /// </summary>
-    /// <param name="type">Type of package (i.e. nuget, npm, gem, etc).</param>
-    /// <param name="namespace">Namespace of package (i.e. group, owner, organization).</param>
-    /// <param name="name">Name of the package.</param>
-    /// <param name="version">Version of the package.</param>
-    /// <param name="qualifiers"><see cref="SortedDictionary{string, string}"/> of key/value pair qualifiers.</param>
-    /// @param qualifiers an array of key/value pair qualifiers
-    /// @param subpath the subpath string
-    /// <exception cref="MalformedPackageUrlException">Thrown when parsing fails.</exception>
+    /// <param name="type">The package type (e.g. nuget, npm, gem).</param>
+    /// <param name="namespace">The type-specific namespace (e.g. Maven groupId, GitHub user), or <see langword="null"/>.</param>
+    /// <param name="name">The package name.</param>
+    /// <param name="version">The package version, or <see langword="null"/>.</param>
+    /// <param name="qualifiers">Qualifier key/value pairs, or <see langword="null"/>.</param>
+    /// <param name="subpath">A path relative to the package root, or <see langword="null"/>.</param>
+    /// <exception cref="MalformedPackageUrlException">Thrown if any component is invalid.</exception>
     public PackageURL(
         string type,
         string @namespace,
@@ -136,15 +139,31 @@ public sealed class PackageURL : IEquatable<PackageURL>
     }
 
     /// <summary>
-    /// Returns a canonicalized representation of the purl.
+    /// Returns the canonical string representation of this PURL.
     /// </summary>
     public override string ToString()
     {
         int capacity = 4 + 1; // "pkg:"  + "/"
-        if (Type != null) capacity += Type.Length;
-        if (Namespace != null) capacity += Namespace.Length + 1;
-        if (Name != null) capacity += Name.Length;
-        if (Version != null) capacity += Version.Length + 1;
+        if (Type != null)
+        {
+            capacity += Type.Length;
+        }
+
+        if (Namespace != null)
+        {
+            capacity += Namespace.Length + 1;
+        }
+
+        if (Name != null)
+        {
+            capacity += Name.Length;
+        }
+
+        if (Version != null)
+        {
+            capacity += Version.Length + 1;
+        }
+
         var purl = new StringBuilder(capacity);
         purl.Append(Scheme).Append(':');
         if (Type != null)

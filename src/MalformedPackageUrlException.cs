@@ -23,15 +23,14 @@ using System;
 namespace PackageUrl;
 
 /// <summary>
-/// Exception class intended to be used for PackageURL parsing exceptions.
+/// Thrown when a Package URL string cannot be parsed or when invalid components are provided.
 /// </summary>
 public class MalformedPackageUrlException : Exception
 {
     /// <summary>
-    /// Constructs a <see cref="MalformedPackageUrlException" /> with the
-    /// specified detail message.
+    /// Creates a new <see cref="MalformedPackageUrlException" /> with the specified message.
     /// </summary>
-    //  <param name="message">The message that describes the error</param>
+    /// <param name="message">A description of the parsing error.</param>
     public MalformedPackageUrlException(string message)
         : base(message) { }
 }
