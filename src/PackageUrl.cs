@@ -175,7 +175,7 @@ public sealed class PackageURL
             foreach (var pair in Qualifiers)
             {
                 string encodedValue = WebUtility.UrlEncode(pair.Value).Replace(EncodedSlash, "/");
-                purl.Append(pair.Key.ToLower());
+                purl.Append(pair.Key.ToLowerInvariant());
                 purl.Append('=');
                 purl.Append(encodedValue);
                 purl.Append('&');
@@ -308,7 +308,7 @@ public sealed class PackageURL
                 "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
             );
         }
-        return type.ToLower();
+        return type.ToLowerInvariant();
     }
 
     private string ValidateNamespace(string @namespace)
@@ -328,7 +328,7 @@ public sealed class PackageURL
         }
         return Type switch
         {
-            "bitbucket" or "github" or "pypi" or "gitlab" => @namespace.ToLower(),
+            "bitbucket" or "github" or "pypi" or "gitlab" => @namespace.ToLowerInvariant(),
             _ => @namespace,
         };
     }
@@ -341,8 +341,8 @@ public sealed class PackageURL
         }
         return Type switch
         {
-            "bitbucket" or "github" or "gitlab" => name.ToLower(),
-            "pypi" => name.Replace('_', '-').ToLower(),
+            "bitbucket" or "github" or "gitlab" => name.ToLowerInvariant(),
+            "pypi" => name.Replace('_', '-').ToLowerInvariant(),
             _ => name,
         };
     }
@@ -356,7 +356,7 @@ public sealed class PackageURL
             if (pair.Contains("="))
             {
                 string[] kvpair = pair.Split(['='], 2);
-                string key = kvpair[0].ToLower();
+                string key = kvpair[0].ToLowerInvariant();
                 string value = WebUtility.UrlDecode(kvpair[1]);
 
                 if (!s_qualifierKeyPattern.IsMatch(key))
