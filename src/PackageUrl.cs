@@ -332,13 +332,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         // Test for namespaces
         if (firstPartArray.Length > 2)
         {
-            string @namespace = "";
-            int i;
-            for (i = 1; i < firstPartArray.Length - 2; ++i)
-            {
-                @namespace += firstPartArray[i] + '/';
-            }
-            @namespace += firstPartArray[i];
+            string @namespace = string.Join("/", firstPartArray, 1, firstPartArray.Length - 2);
 
             Namespace = ValidateNamespace(WebUtility.UrlDecode(@namespace));
         }
