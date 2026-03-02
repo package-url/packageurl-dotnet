@@ -292,25 +292,25 @@ public sealed class PackageURL : IEquatable<PackageURL>
             }
         }
 
-        if (remainder.Contains("#"))
-        { // subpath is optional - check for existence
-            int index = remainder.LastIndexOf("#");
-            Subpath = ValidateSubpath(WebUtility.UrlDecode(remainder.Substring(index + 1)));
-            remainder = remainder.Substring(0, index);
+        int subpathIndex = remainder.LastIndexOf('#');
+        if (subpathIndex >= 0)
+        {
+            Subpath = ValidateSubpath(WebUtility.UrlDecode(remainder.Substring(subpathIndex + 1)));
+            remainder = remainder.Substring(0, subpathIndex);
         }
 
-        if (remainder.Contains("?"))
-        { // qualifiers are optional - check for existence
-            int index = remainder.LastIndexOf("?");
-            Qualifiers = ValidateQualifiers(remainder.Substring(index + 1));
-            remainder = remainder.Substring(0, index);
+        int qualifiersIndex = remainder.LastIndexOf('?');
+        if (qualifiersIndex >= 0)
+        {
+            Qualifiers = ValidateQualifiers(remainder.Substring(qualifiersIndex + 1));
+            remainder = remainder.Substring(0, qualifiersIndex);
         }
 
-        if (remainder.Contains("@"))
-        { // version is optional - check for existence
-            int index = remainder.LastIndexOf("@");
-            Version = WebUtility.UrlDecode(remainder.Substring(index + 1));
-            remainder = remainder.Substring(0, index);
+        int versionIndex = remainder.LastIndexOf('@');
+        if (versionIndex >= 0)
+        {
+            Version = WebUtility.UrlDecode(remainder.Substring(versionIndex + 1));
+            remainder = remainder.Substring(0, versionIndex);
         }
 
         // The 'remainder' should now consist of the type, an optional namespace, and the name
