@@ -193,22 +193,86 @@ public sealed class PackageURL : IEquatable<PackageURL>
     public bool Equals(PackageURL other)
     {
         if (other is null)
+        {
             return false;
+        }
+
         if (ReferenceEquals(this, other))
+        {
             return true;
-        return string.Equals(ToString(), other.ToString(), StringComparison.Ordinal);
+        }
+
+        return string.Equals(Type, other.Type, StringComparison.Ordinal)
+            && string.Equals(Name, other.Name, StringComparison.Ordinal)
+            && string.Equals(Namespace, other.Namespace, StringComparison.Ordinal)
+            && string.Equals(Version, other.Version, StringComparison.Ordinal)
+            && string.Equals(Subpath, other.Subpath, StringComparison.Ordinal)
+            && QualifiersEqual(Qualifiers, other.Qualifiers);
     }
 
     /// <inheritdoc />
     public override bool Equals(object obj) => Equals(obj as PackageURL);
 
     /// <inheritdoc />
-    public override int GetHashCode() => ToString().GetHashCode();
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 31 + (Type?.GetHashCode() ?? 0);
+            hash = hash * 31 + (Namespace?.GetHashCode() ?? 0);
+            hash = hash * 31 + (Name?.GetHashCode() ?? 0);
+            hash = hash * 31 + (Version?.GetHashCode() ?? 0);
+            hash = hash * 31 + (Subpath?.GetHashCode() ?? 0);
+            if (Qualifiers != null)
+            {
+                foreach (var pair in Qualifiers)
+                {
+                    hash = hash * 31 + pair.Key.GetHashCode();
+                    hash = hash * 31 + pair.Value.GetHashCode();
+                }
+            }
+            return hash;
+        }
+    }
 
     public static bool operator ==(PackageURL left, PackageURL right) =>
         left is null ? right is null : left.Equals(right);
 
     public static bool operator !=(PackageURL left, PackageURL right) => !(left == right);
+
+    private static bool QualifiersEqual(
+        SortedDictionary<string, string> a,
+        SortedDictionary<string, string> b
+    )
+    {
+        if (ReferenceEquals(a, b))
+        {
+            return true;
+        }
+
+        if (a is null || b is null)
+        {
+            return a is null && b is null;
+        }
+
+        if (a.Count != b.Count)
+        {
+            return false;
+        }
+
+        foreach (var pair in a)
+        {
+            if (
+                !b.TryGetValue(pair.Key, out string value)
+                || !string.Equals(pair.Value, value, StringComparison.Ordinal)
+            )
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
     /// <summary>
     /// Percent-encodes a string per RFC 3986 §2.1 using the PURL allowed set.
