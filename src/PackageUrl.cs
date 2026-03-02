@@ -45,11 +45,6 @@ namespace PackageUrl;
 [Serializable]
 public sealed class PackageUrl : IEquatable<PackageUrl>
 {
-    private static readonly Regex s_typePattern = new Regex(
-        "^[a-zA-Z][a-zA-Z0-9.-]+$",
-        RegexOptions.Compiled
-    );
-
     private static readonly Regex s_qualifierKeyPattern = new Regex(
         "^[a-zA-Z][a-zA-Z0-9._-]*$",
         RegexOptions.Compiled
@@ -454,11 +449,28 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
 
     private static string ValidateType(string type)
     {
-        if (type == null || !s_typePattern.IsMatch(type))
+        if (type == null || type.Length < 2)
         {
             throw new MalformedPackageUrlException(
                 "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
             );
+        }
+        char first = type[0];
+        if (!((first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z')))
+        {
+            throw new MalformedPackageUrlException(
+                "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
+            );
+        }
+        for (int i = 1; i < type.Length; i++)
+        {
+            char c = type[i];
+            if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '-'))
+            {
+                throw new MalformedPackageUrlException(
+                    "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
+                );
+            }
         }
         return type.ToLowerInvariant();
     }
