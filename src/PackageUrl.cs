@@ -439,21 +439,41 @@ public sealed class PackageURL : IEquatable<PackageURL>
         {
             return null;
         }
-        string[] segments = subpath.Trim('/').Split('/');
-        var validSegments = new List<string>();
+        string trimmed = subpath.Trim('/');
+        if (trimmed.Length == 0)
+        {
+            return null;
+        }
+
+        // Fast path: no dot-only segments and no empty segments means
+        // the trimmed string can be returned as-is.
+        bool hasEmptyOrDotSegment = false;
+        string[] segments = trimmed.Split('/');
         foreach (var segment in segments)
         {
-            if (segment.Length == 0)
-            {
-                continue;
-            }
             if (segment == "." || segment == "..")
             {
                 throw new MalformedPackageUrlException(
                     $"The purl subpath must not contain '.' or '..' segments, but found: '{segment}'."
                 );
             }
-            validSegments.Add(segment);
+            if (segment.Length == 0)
+            {
+                hasEmptyOrDotSegment = true;
+            }
+        }
+        if (!hasEmptyOrDotSegment)
+        {
+            return trimmed;
+        }
+
+        var validSegments = new List<string>();
+        foreach (var segment in segments)
+        {
+            if (segment.Length > 0)
+            {
+                validSegments.Add(segment);
+            }
         }
         return validSegments.Count > 0 ? string.Join("/", validSegments) : null;
     }
