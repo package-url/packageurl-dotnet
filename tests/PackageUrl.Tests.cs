@@ -37,11 +37,11 @@ public class PackageURLTest
     {
         if (data.IsInvalid)
         {
-            Assert.Throws<MalformedPackageUrlException>(() => new PackageURL(data.Purl));
+            Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(data.Purl));
             return;
         }
 
-        PackageURL purl = new PackageURL(data.Purl);
+        PackageUrl purl = new PackageUrl(data.Purl);
         Assert.Equal(data.CanonicalPurl, purl.ToString());
         Assert.Equal("pkg", purl.Scheme);
         Assert.Equal(data.Type, purl.Type);
@@ -60,7 +60,7 @@ public class PackageURLTest
     [InlineData("pkg:some,type/name")]
     public void TestTypeWithInvalidCharactersThrows(string purl)
     {
-        Assert.Throws<MalformedPackageUrlException>(() => new PackageURL(purl));
+        Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(purl));
     }
 
     [Theory]
@@ -68,7 +68,7 @@ public class PackageURLTest
     [InlineData("pkg:valid.type/name")]
     public void TestTypeWithValidCharactersParses(string purl)
     {
-        var parsed = new PackageURL(purl);
+        var parsed = new PackageUrl(purl);
         Assert.NotNull(parsed.Type);
     }
 
@@ -79,13 +79,13 @@ public class PackageURLTest
     [InlineData("pkg:npm/foo@1.0?_key=value")]
     public void TestInvalidQualifierKeyThrows(string purl)
     {
-        Assert.Throws<MalformedPackageUrlException>(() => new PackageURL(purl));
+        Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(purl));
     }
 
     [Fact]
     public void TestQualifierKeysAreLowercased()
     {
-        var purl = new PackageURL("pkg:npm/foo@1.0?Arch=i386");
+        var purl = new PackageUrl("pkg:npm/foo@1.0?Arch=i386");
         Assert.True(purl.Qualifiers.ContainsKey("arch"));
         Assert.False(purl.Qualifiers.ContainsKey("Arch"));
     }
@@ -93,14 +93,14 @@ public class PackageURLTest
     [Fact]
     public void TestQualifierValueContainingEquals()
     {
-        var purl = new PackageURL("pkg:npm/foo@1.0?key=val%3Due");
+        var purl = new PackageUrl("pkg:npm/foo@1.0?key=val%3Due");
         Assert.Equal("val=ue", purl.Qualifiers["key"]);
     }
 
     [Fact]
     public void TestEmptyQualifierValueIsDiscarded()
     {
-        var purl = new PackageURL("pkg:npm/foo@1.0?empty=&arch=i386");
+        var purl = new PackageUrl("pkg:npm/foo@1.0?empty=&arch=i386");
         Assert.False(purl.Qualifiers.ContainsKey("empty"));
         Assert.Equal("i386", purl.Qualifiers["arch"]);
     }
@@ -109,7 +109,7 @@ public class PackageURLTest
     public void TestDuplicateQualifierKeyThrows()
     {
         Assert.Throws<MalformedPackageUrlException>(() =>
-            new PackageURL("pkg:npm/foo@1.0?arch=i386&arch=amd64")
+            new PackageUrl("pkg:npm/foo@1.0?arch=i386&arch=amd64")
         );
     }
 
@@ -121,7 +121,7 @@ public class PackageURLTest
     public void TestSubpathWithDotSegmentsThrows(string subpath)
     {
         Assert.Throws<MalformedPackageUrlException>(() =>
-            new PackageURL("npm", null, "foo", "1.0", null, subpath)
+            new PackageUrl("npm", null, "foo", "1.0", null, subpath)
         );
     }
 
@@ -131,7 +131,7 @@ public class PackageURLTest
     [InlineData("///path///file///", "path/file")]
     public void TestSubpathEmptySegmentsAreNormalized(string subpath, string expected)
     {
-        var purl = new PackageURL("npm", null, "foo", "1.0", null, subpath);
+        var purl = new PackageUrl("npm", null, "foo", "1.0", null, subpath);
         Assert.Equal(expected, purl.Subpath);
     }
 
@@ -140,7 +140,7 @@ public class PackageURLTest
     public void TestNamespaceWithEmptySegmentThrows(string ns)
     {
         Assert.Throws<MalformedPackageUrlException>(() =>
-            new PackageURL("npm", ns, "foo", "1.0", null, null)
+            new PackageUrl("npm", ns, "foo", "1.0", null, null)
         );
     }
 
@@ -149,7 +149,7 @@ public class PackageURLTest
     [InlineData("org/pkg/", "org/pkg")]
     public void TestNamespaceLeadingTrailingSlashesAreStripped(string ns, string expected)
     {
-        var purl = new PackageURL("npm", ns, "foo", "1.0", null, null);
+        var purl = new PackageUrl("npm", ns, "foo", "1.0", null, null);
         Assert.Equal(expected, purl.Namespace);
     }
 
@@ -157,7 +157,7 @@ public class PackageURLTest
     public void TestEmptyNameThrows()
     {
         Assert.Throws<MalformedPackageUrlException>(() =>
-            new PackageURL("npm", null, "", "1.0", null, null)
+            new PackageUrl("npm", null, "", "1.0", null, null)
         );
     }
 
@@ -167,11 +167,11 @@ public class PackageURLTest
     {
         if (data.IsInvalid)
         {
-            Assert.Throws<MalformedPackageUrlException>(() => new PackageURL(data.Purl));
+            Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(data.Purl));
             return;
         }
 
-        PackageURL purl = new PackageURL(
+        PackageUrl purl = new PackageUrl(
             data.Type,
             data.Namespace,
             data.Name,

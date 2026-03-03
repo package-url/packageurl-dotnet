@@ -43,7 +43,7 @@ namespace PackageUrl;
 /// </para>
 /// </summary>
 [Serializable]
-public sealed class PackageURL : IEquatable<PackageURL>
+public sealed class PackageUrl : IEquatable<PackageUrl>
 {
     private static readonly Regex s_typePattern = new Regex(
         "^[a-zA-Z][a-zA-Z0-9.-]+$",
@@ -93,26 +93,26 @@ public sealed class PackageURL : IEquatable<PackageURL>
     public string Subpath { get; private set; }
 
     /// <summary>
-    /// Parses <paramref name="purl"/> into a new <see cref="PackageURL"/>.
+    /// Parses <paramref name="purl"/> into a new <see cref="PackageUrl"/>.
     /// </summary>
     /// <param name="purl">A valid Package URL string (e.g. <c>"pkg:npm/foobar@12.3.1"</c>).</param>
     /// <exception cref="MalformedPackageUrlException">Thrown if <paramref name="purl"/> is not a valid Package URL.</exception>
-    public PackageURL(string purl)
+    public PackageUrl(string purl)
     {
         Parse(purl);
     }
 
     /// <summary>
-    /// Creates a <see cref="PackageURL"/> with only the required type and name components.
+    /// Creates a <see cref="PackageUrl"/> with only the required type and name components.
     /// </summary>
     /// <param name="type">The package type (e.g. nuget, npm, gem).</param>
     /// <param name="name">The package name.</param>
     /// <exception cref="MalformedPackageUrlException">Thrown if <paramref name="type"/> or <paramref name="name"/> is invalid.</exception>
-    public PackageURL(string type, string name)
+    public PackageUrl(string type, string name)
         : this(type, null, name, null, null, null) { }
 
     /// <summary>
-    /// Creates a <see cref="PackageURL"/> from individual components.
+    /// Creates a <see cref="PackageUrl"/> from individual components.
     /// </summary>
     /// <param name="type">The package type (e.g. nuget, npm, gem).</param>
     /// <param name="namespace">The type-specific namespace (e.g. Maven groupId, GitHub user), or <see langword="null"/>.</param>
@@ -121,7 +121,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
     /// <param name="qualifiers">Qualifier key/value pairs, or <see langword="null"/>.</param>
     /// <param name="subpath">A path relative to the package root, or <see langword="null"/>.</param>
     /// <exception cref="MalformedPackageUrlException">Thrown if any component is invalid.</exception>
-    public PackageURL(
+    public PackageUrl(
         string type,
         string @namespace,
         string name,
@@ -209,7 +209,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
     }
 
     /// <inheritdoc />
-    public bool Equals(PackageURL other)
+    public bool Equals(PackageUrl other)
     {
         if (other is null)
         {
@@ -230,7 +230,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
     }
 
     /// <inheritdoc />
-    public override bool Equals(object obj) => Equals(obj as PackageURL);
+    public override bool Equals(object obj) => Equals(obj as PackageUrl);
 
     /// <inheritdoc />
     public override int GetHashCode()
@@ -255,10 +255,10 @@ public sealed class PackageURL : IEquatable<PackageURL>
         }
     }
 
-    public static bool operator ==(PackageURL left, PackageURL right) =>
+    public static bool operator ==(PackageUrl left, PackageUrl right) =>
         left is null ? right is null : left.Equals(right);
 
-    public static bool operator !=(PackageURL left, PackageURL right) => !(left == right);
+    public static bool operator !=(PackageUrl left, PackageUrl right) => !(left == right);
 
     private static bool QualifiersEqual(
         SortedDictionary<string, string> a,
