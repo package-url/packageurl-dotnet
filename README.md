@@ -1,58 +1,76 @@
-![Build](https://github.com/package-url/packageurl-dotnet/actions/workflows/build.yml/badge.svg)
+# packageurl-dotnet
+
+[![Build][build-image]][build-url]
 [![License][license-image]][license-url]
-[![NuGet version (packageurl-dotnet)](https://img.shields.io/nuget/v/packageurl-dotnet)](https://www.nuget.org/packages/packageurl-dotnet/)
+[![NuGet][nuget-image]][nuget-url]
 
-Package URL (purl) for .NET
-=========
+A .NET parser for [Package URLs](https://ecma-tc54.github.io/ECMA-427/) (ECMA-427). Handles strings like `pkg:nuget/Newtonsoft.Json@13.0.1` -- parses them apart, builds them from components, gives you a canonical form back.
 
-This project implements a purl parser and class for .NET. Its available as a [.NET Standard 2.0](https://docs.microsoft.com/en-us/dotnet/standard/net-standard) library on [NuGet.org](https://www.nuget.org/packages/packageurl-dotnet/).
+Targets .NET Standard 2.0, so it works anywhere from .NET Framework 4.6.1 through .NET 10+.
 
-Build and Test (command line)
--------------------
-
-From root of the repository, using [dotnet-cli](https://docs.microsoft.com/en-us/dotnet/core/tools/) v6.0+:
+## Install
 
 ```sh
-dotnet pack -c Release
-dotnet test -c Release ./tests
-````
-
-Build and Test (Visual Studio)
--------------------
-
-Open `./PackageUrl.sln` in Visual Studio 2022+, build solution and run tests using the `Test Explorer`.
-
-Installation
--------------------
-
-```sh
-dotnet add <Path-to-Project-file> package packageurl-dotnet
+dotnet add package packageurl-dotnet
 ```
 
-or in project file, add:
+Or in your project file:
 
 ```xml
 <PackageReference Include="packageurl-dotnet" Version="1.0.0" />
 ```
 
-Usage
--------------------
+## Usage
 
-Creates a new PURL object from a string:
-```c#
-PackageUrl purl = new PackageUrl(purlString);
-````
+Parse a PURL string:
 
-Creates a new PURL object from purl parameters:
-```c#
-PackageUrl purl = new PackageUrl(type, namespace, name, version, qualifiers, subpath);
-````
+```csharp
+var purl = new PackageUrl("pkg:nuget/Newtonsoft.Json@13.0.1");
 
-License
--------------------
+Console.WriteLine(purl.Type);      // nuget
+Console.WriteLine(purl.Name);      // Newtonsoft.Json
+Console.WriteLine(purl.Version);   // 13.0.1
+```
 
-Permission to modify and redistribute is granted under the terms of the
-[MIT License](https://github.com/package-url/packageurl-dotnet/blob/master/LICENSE).
+Build one from parts:
 
-[license-image]: https://img.shields.io/badge/license-mit%20license-brightgreen.svg
+```csharp
+var purl = new PackageUrl(
+    type: "maven",
+    @namespace: "org.apache.commons",
+    name: "commons-lang3",
+    version: "3.14.0",
+    qualifiers: null,
+    subpath: null);
+
+Console.WriteLine(purl.ToString());
+// pkg:maven/org.apache.commons/commons-lang3@3.14.0
+```
+
+There's also a two-argument shorthand if you only need type and name:
+
+```csharp
+var purl = new PackageUrl("npm", "lodash");
+```
+
+## Build from source
+
+Requires .NET SDK 10+.
+
+```sh
+dotnet pack -c Release
+dotnet test -c Release ./tests
+```
+
+Or open `PackageUrl.slnx` in Visual Studio 2022+ and run tests from Test Explorer.
+
+## License
+
+[MIT](LICENSE)
+
+[build-image]: https://img.shields.io/github/actions/workflow/status/package-url/packageurl-dotnet/build.yml?branch=master&style=for-the-badge
+[build-url]: https://github.com/package-url/packageurl-dotnet/actions/workflows/build.yml
+[license-image]: https://img.shields.io/github/license/package-url/packageurl-dotnet?style=for-the-badge
 [license-url]: https://github.com/package-url/packageurl-dotnet/blob/master/LICENSE
+[nuget-image]: https://img.shields.io/nuget/v/packageurl-dotnet?style=for-the-badge
+[nuget-url]: https://www.nuget.org/packages/packageurl-dotnet/
