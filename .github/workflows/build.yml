@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [master]
 
+permissions:
+  contents: read
+
 jobs:
   Build:
     runs-on: ubuntu-latest
@@ -37,13 +40,31 @@ jobs:
           path: |
             nuget
 
+  Publish:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: Build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      - name: Download NuGet Packages
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: nuget
+          path: nuget
+
+      - name: NuGet Login
+        uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544 # v1
+        id: nuget-login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Release & Publish to nuget.org
-        id: release
-        if: github.event_name == 'push' && github.ref_type == 'tag'
         run: |
           echo 'Creating Release ${{ env.GitVersion_SemVer }}'
           gh release create '${{ env.GitVersion_SemVer }}' ./nuget/* --target '${{ github.sha }}' --generate-notes
-          dotnet nuget push "nuget/*.nupkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+          dotnet nuget push "nuget/*.nupkg" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
