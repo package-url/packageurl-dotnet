@@ -37,11 +37,11 @@ public class PackageURLTest
     {
         if (data.IsInvalid)
         {
-            Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(data.Purl));
+            Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(data.Purl!));
             return;
         }
 
-        PackageUrl purl = new PackageUrl(data.Purl);
+        PackageUrl purl = new PackageUrl(data.Purl!);
         Assert.Equal(data.CanonicalPurl, purl.ToString());
         Assert.Equal("pkg", purl.Scheme);
         Assert.Equal(data.Type, purl.Type);
@@ -86,23 +86,23 @@ public class PackageURLTest
     public void TestQualifierKeysAreLowercased()
     {
         var purl = new PackageUrl("pkg:npm/foo@1.0?Arch=i386");
-        Assert.True(purl.Qualifiers.ContainsKey("arch"));
-        Assert.False(purl.Qualifiers.ContainsKey("Arch"));
+        Assert.True(purl.Qualifiers!.ContainsKey("arch"));
+        Assert.False(purl.Qualifiers!.ContainsKey("Arch"));
     }
 
     [Fact]
     public void TestQualifierValueContainingEquals()
     {
         var purl = new PackageUrl("pkg:npm/foo@1.0?key=val%3Due");
-        Assert.Equal("val=ue", purl.Qualifiers["key"]);
+        Assert.Equal("val=ue", purl.Qualifiers!["key"]);
     }
 
     [Fact]
     public void TestEmptyQualifierValueIsDiscarded()
     {
         var purl = new PackageUrl("pkg:npm/foo@1.0?empty=&arch=i386");
-        Assert.False(purl.Qualifiers.ContainsKey("empty"));
-        Assert.Equal("i386", purl.Qualifiers["arch"]);
+        Assert.False(purl.Qualifiers!.ContainsKey("empty"));
+        Assert.Equal("i386", purl.Qualifiers!["arch"]);
     }
 
     [Fact]
@@ -167,14 +167,14 @@ public class PackageURLTest
     {
         if (data.IsInvalid)
         {
-            Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(data.Purl));
+            Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(data.Purl!));
             return;
         }
 
         PackageUrl purl = new PackageUrl(
-            data.Type,
+            data.Type!,
             data.Namespace,
-            data.Name,
+            data.Name!,
             data.Version,
             data.Qualifiers,
             data.Subpath
