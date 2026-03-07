@@ -181,7 +181,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             purl.Append("?");
             foreach (var pair in Qualifiers)
             {
-                string encodedValue = PercentEncode(pair.Value, "/");
+                string encodedValue = PercentEncode(pair.Value, ":");
                 purl.Append(pair.Key.ToLowerInvariant());
                 purl.Append('=');
                 purl.Append(encodedValue);
