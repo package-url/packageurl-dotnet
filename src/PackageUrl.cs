@@ -510,11 +510,11 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         string[] pairs = qualifiers.Split('&');
         foreach (var pair in pairs)
         {
-            if (pair.Contains("="))
+            int eqIndex = pair.IndexOf('=');
+            if (eqIndex >= 0)
             {
-                string[] kvpair = pair.Split(['='], 2);
-                string key = kvpair[0].ToLowerInvariant();
-                string value = WebUtility.UrlDecode(kvpair[1]);
+                string key = pair.Substring(0, eqIndex).ToLowerInvariant();
+                string value = WebUtility.UrlDecode(pair.Substring(eqIndex + 1));
 
                 if (!s_qualifierKeyPattern.IsMatch(key))
                 {
