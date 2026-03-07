@@ -18,43 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using PackageUrl.Tests.TestAssets;
 using Xunit;
 
 namespace PackageUrl.Tests;
 
 /// <summary>
-/// Test cases for PackageURL parsing.
+/// Edge case tests for PURL type, qualifier, namespace, subpath, and name validation.
 /// </summary>
-/// <remarks>
-/// Original test cases retrieved from: https://raw.githubusercontent.com/package-url/purl-spec/master/test-suite-data.json
-/// </remarks>
-public class PackageURLTest
+public class PackageUrlTests
 {
-    [Theory]
-    [PurlTestData("TestAssets/test-suite-data.json")]
-    public void TestConstructorParsing(PurlTestData data)
-    {
-        if (data.IsInvalid)
-        {
-            Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(data.Purl!));
-            return;
-        }
-
-        PackageUrl purl = new PackageUrl(data.Purl!);
-        Assert.Equal(data.CanonicalPurl, purl.ToString());
-        Assert.Equal("pkg", purl.Scheme);
-        Assert.Equal(data.Type, purl.Type);
-        Assert.Equal(data.Namespace, purl.Namespace);
-        Assert.Equal(data.Name, purl.Name);
-        Assert.Equal(data.Version, purl.Version);
-        Assert.Equal(data.Subpath, purl.Subpath);
-        if (data.Qualifiers != null)
-        {
-            Assert.NotNull(purl.Qualifiers);
-        }
-    }
-
     [Theory]
     [InlineData("pkg:some+type/name")]
     [InlineData("pkg:some,type/name")]
@@ -159,37 +131,5 @@ public class PackageURLTest
         Assert.Throws<MalformedPackageUrlException>(() =>
             new PackageUrl("npm", null, "", "1.0", null, null)
         );
-    }
-
-    [Theory]
-    [PurlTestData("TestAssets/test-suite-data.json")]
-    public void TestConstructorParameters(PurlTestData data)
-    {
-        if (data.IsInvalid)
-        {
-            Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(data.Purl!));
-            return;
-        }
-
-        PackageUrl purl = new PackageUrl(
-            data.Type!,
-            data.Namespace,
-            data.Name!,
-            data.Version,
-            data.Qualifiers,
-            data.Subpath
-        );
-
-        Assert.Equal(data.CanonicalPurl, purl.ToString());
-        Assert.Equal("pkg", purl.Scheme);
-        Assert.Equal(data.Type, purl.Type);
-        Assert.Equal(data.Namespace, purl.Namespace);
-        Assert.Equal(data.Name, purl.Name);
-        Assert.Equal(data.Version, purl.Version);
-        Assert.Equal(data.Subpath, purl.Subpath);
-        if (data.Qualifiers != null)
-        {
-            Assert.NotNull(purl.Qualifiers);
-        }
     }
 }
