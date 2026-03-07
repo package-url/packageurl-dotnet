@@ -44,24 +44,24 @@ public class PurlTestData : DataAttribute
 
     private readonly string _filePath = null!;
 
-    public string Description;
+    public string? Description;
 
-    public string Purl;
+    public string? Purl;
 
     [JsonPropertyName("canonical_purl")]
-    public string CanonicalPurl;
+    public string? CanonicalPurl;
 
-    public string Type;
+    public string? Type;
 
-    public string Namespace;
+    public string? Namespace;
 
-    public string Name;
+    public string? Name;
 
-    public string Version;
+    public string? Version;
 
-    public SortedDictionary<string, string> Qualifiers;
+    public SortedDictionary<string, string>? Qualifiers;
 
-    public string Subpath;
+    public string? Subpath;
 
     [JsonPropertyName("is_invalid")]
     public bool IsInvalid;

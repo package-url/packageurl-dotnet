@@ -52,34 +52,34 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     /// <summary>
     /// The package type, such as npm, nuget, gem, or pypi. The canonical form is lowercase.
     /// </summary>
-    public string Type { get; private set; }
+    public string Type { get; private set; } = null!;
 
     /// <summary>
     /// A type-specific name prefix, such as a Maven groupId, a Docker image owner,
     /// or a GitHub user or organization. May be <see langword="null"/>.
     /// </summary>
-    public string Namespace { get; private set; }
+    public string? Namespace { get; private set; }
 
     /// <summary>
     /// The name of the package.
     /// </summary>
-    public string Name { get; private set; }
+    public string Name { get; private set; } = null!;
 
     /// <summary>
     /// The version of the package, or <see langword="null"/> if unspecified.
     /// </summary>
-    public string Version { get; private set; }
+    public string? Version { get; private set; }
 
     /// <summary>
     /// Qualifier key/value pairs for the package, such as OS, architecture, or distribution.
     /// May be <see langword="null"/>.
     /// </summary>
-    public SortedDictionary<string, string> Qualifiers { get; private set; }
+    public SortedDictionary<string, string>? Qualifiers { get; private set; }
 
     /// <summary>
     /// A path relative to the package root, or <see langword="null"/> if unspecified.
     /// </summary>
-    public string Subpath { get; private set; }
+    public string? Subpath { get; private set; }
 
     /// <summary>
     /// Parses <paramref name="purl"/> into a new <see cref="PackageUrl"/>.
@@ -112,11 +112,11 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     /// <exception cref="MalformedPackageUrlException">Thrown if any component is invalid.</exception>
     public PackageUrl(
         string type,
-        string @namespace,
+        string? @namespace,
         string name,
-        string version,
-        SortedDictionary<string, string> qualifiers,
-        string subpath
+        string? version,
+        SortedDictionary<string, string>? qualifiers,
+        string? subpath
     )
     {
         Type = ValidateType(type);
@@ -198,7 +198,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     }
 
     /// <inheritdoc />
-    public bool Equals(PackageUrl other)
+    public bool Equals(PackageUrl? other)
     {
         if (other is null)
         {
@@ -219,7 +219,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     }
 
     /// <inheritdoc />
-    public override bool Equals(object obj) => Equals(obj as PackageUrl);
+    public override bool Equals(object? obj) => Equals(obj as PackageUrl);
 
     /// <inheritdoc />
     public override int GetHashCode()
@@ -244,14 +244,14 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
     }
 
-    public static bool operator ==(PackageUrl left, PackageUrl right) =>
+    public static bool operator ==(PackageUrl? left, PackageUrl? right) =>
         left is null ? right is null : left.Equals(right);
 
-    public static bool operator !=(PackageUrl left, PackageUrl right) => !(left == right);
+    public static bool operator !=(PackageUrl? left, PackageUrl? right) => !(left == right);
 
     private static bool QualifiersEqual(
-        SortedDictionary<string, string> a,
-        SortedDictionary<string, string> b
+        SortedDictionary<string, string>? a,
+        SortedDictionary<string, string>? b
     )
     {
         if (ReferenceEquals(a, b))
@@ -272,7 +272,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         foreach (var pair in a)
         {
             if (
-                !b.TryGetValue(pair.Key, out string value)
+                !b.TryGetValue(pair.Key, out string? value)
                 || !string.Equals(pair.Value, value, StringComparison.Ordinal)
             )
             {
@@ -287,7 +287,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     /// Characters in the allowed set (alphanumeric plus .-_~) are not encoded.
     /// Characters listed in <paramref name="preserve"/> are also kept unencoded.
     /// </summary>
-    private static string PercentEncode(string value, string preserve = null)
+    private static string PercentEncode(string value, string? preserve = null)
     {
         // Fast path: check if encoding is needed at all
         bool needsEncoding = false;
@@ -477,7 +477,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         return type.ToLowerInvariant();
     }
 
-    private string ValidateNamespace(string @namespace)
+    private string? ValidateNamespace(string? @namespace)
     {
         if (@namespace == null)
         {
@@ -586,7 +586,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         return list;
     }
 
-    private static string ValidateSubpath(string subpath)
+    private static string? ValidateSubpath(string? subpath)
     {
         if (subpath == null)
         {
