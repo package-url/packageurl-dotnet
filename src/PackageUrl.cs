@@ -22,7 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace PackageUrl;
 
@@ -45,16 +44,6 @@ namespace PackageUrl;
 [Serializable]
 public sealed class PackageUrl : IEquatable<PackageUrl>
 {
-    private static readonly Regex s_typePattern = new Regex(
-        "^[a-zA-Z][a-zA-Z0-9.-]+$",
-        RegexOptions.Compiled
-    );
-
-    private static readonly Regex s_qualifierKeyPattern = new Regex(
-        "^[a-zA-Z][a-zA-Z0-9._-]*$",
-        RegexOptions.Compiled
-    );
-
     /// <summary>
     /// The URL scheme. Always <c>"pkg"</c>.
     /// </summary>
@@ -454,11 +443,36 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
 
     private static string ValidateType(string type)
     {
-        if (type == null || !s_typePattern.IsMatch(type))
+        if (type == null || type.Length < 2)
         {
             throw new MalformedPackageUrlException(
                 "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
             );
+        }
+        char first = type[0];
+        if (!((first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z')))
+        {
+            throw new MalformedPackageUrlException(
+                "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
+            );
+        }
+        for (int i = 1; i < type.Length; i++)
+        {
+            char c = type[i];
+            if (
+                !(
+                    (c >= 'A' && c <= 'Z')
+                    || (c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9')
+                    || c == '.'
+                    || c == '-'
+                )
+            )
+            {
+                throw new MalformedPackageUrlException(
+                    "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
+                );
+            }
         }
         return type.ToLowerInvariant();
     }
@@ -504,6 +518,37 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         };
     }
 
+    private static bool IsValidQualifierKey(string key)
+    {
+        if (key == null || key.Length == 0)
+        {
+            return false;
+        }
+        char first = key[0];
+        if (!((first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z')))
+        {
+            return false;
+        }
+        for (int i = 1; i < key.Length; i++)
+        {
+            char c = key[i];
+            if (
+                !(
+                    (c >= 'A' && c <= 'Z')
+                    || (c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9')
+                    || c == '.'
+                    || c == '_'
+                    || c == '-'
+                )
+            )
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static SortedDictionary<string, string> ValidateQualifiers(string qualifiers)
     {
         var list = new SortedDictionary<string, string>();
@@ -516,7 +561,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
                 string key = pair.Substring(0, eqIndex).ToLowerInvariant();
                 string value = WebUtility.UrlDecode(pair.Substring(eqIndex + 1));
 
-                if (!s_qualifierKeyPattern.IsMatch(key))
+                if (!IsValidQualifierKey(key))
                 {
                     throw new MalformedPackageUrlException(
                         $"Invalid purl qualifier key: '{key}'. Keys must start with a letter and contain only letters, digits, '.', '_', or '-'."
