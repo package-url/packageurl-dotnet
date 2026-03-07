@@ -409,8 +409,11 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             remainder = remainder.Substring(0, qualifiersIndex);
         }
 
+        // The version '@' separator can only appear in the last path segment.
+        // Earlier '@' characters (e.g. pkg:npm/@scope/name) are part of the namespace.
+        int lastSlash = remainder.LastIndexOf('/');
         int versionIndex = remainder.LastIndexOf('@');
-        if (versionIndex >= 0)
+        if (versionIndex >= 0 && versionIndex > lastSlash)
         {
             Version = WebUtility.UrlDecode(remainder.Substring(versionIndex + 1));
             remainder = remainder.Substring(0, versionIndex);
