@@ -22,8 +22,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Xunit;
 using Xunit.Sdk;
 using Xunit.v3;
@@ -32,16 +33,22 @@ namespace PackageUrl.Tests.TestAssets;
 
 public class PurlTestData : DataAttribute
 {
-    private static readonly JsonSerializer s_serializer = new JsonSerializer();
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        IncludeFields = true,
+    };
+
     private static readonly Dictionary<string, IReadOnlyCollection<ITheoryDataRow>> s_assetsStore =
-        new Dictionary<string, IReadOnlyCollection<ITheoryDataRow>>();
-    private readonly string _filePath;
+    [];
+
+    private readonly string _filePath = null!;
 
     public string Description;
 
     public string Purl;
 
-    [JsonProperty("canonical_purl")]
+    [JsonPropertyName("canonical_purl")]
     public string CanonicalPurl;
 
     public string Type;
@@ -56,8 +63,10 @@ public class PurlTestData : DataAttribute
 
     public string Subpath;
 
-    [JsonProperty("is_invalid")]
+    [JsonPropertyName("is_invalid")]
     public bool IsInvalid;
+
+    public PurlTestData() { }
 
     public PurlTestData(string filePath)
     {
@@ -71,18 +80,14 @@ public class PurlTestData : DataAttribute
         DisposalTracker disposalTracker
     )
     {
-        if (s_assetsStore.ContainsKey(_filePath))
+        if (s_assetsStore.TryGetValue(_filePath, out var cachedData))
         {
-            return new ValueTask<IReadOnlyCollection<ITheoryDataRow>>(s_assetsStore[_filePath]);
+            return new ValueTask<IReadOnlyCollection<ITheoryDataRow>>(cachedData);
         }
 
-        using (var streamReader = new StreamReader(_filePath))
-        {
-            var reader = new JsonTextReader(streamReader);
-            var data = s_serializer.Deserialize<PurlTestData[]>(reader);
-            s_assetsStore[_filePath] = data.Select(x => (ITheoryDataRow)new TheoryDataRow(x))
-                .ToList();
-            return new ValueTask<IReadOnlyCollection<ITheoryDataRow>>(s_assetsStore[_filePath]);
-        }
+        using var stream = File.OpenRead(_filePath);
+        var data = JsonSerializer.Deserialize<PurlTestData[]>(stream, s_jsonOptions);
+        s_assetsStore[_filePath] = [.. data!.Select(x => (ITheoryDataRow)new TheoryDataRow(x))];
+        return new ValueTask<IReadOnlyCollection<ITheoryDataRow>>(s_assetsStore[_filePath]);
     }
 }
