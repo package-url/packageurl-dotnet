@@ -20,7 +20,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Text;
 
 namespace PackageUrl;
@@ -283,6 +282,49 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     }
 
     /// <summary>
+    /// Decodes percent-encoded sequences (%XX) without treating '+' as space.
+    /// Unlike <see cref="WebUtility.UrlDecode"/>, which uses form-encoding rules,
+    /// PURL uses strict percent-encoding where '+' is a literal character.
+    /// </summary>
+    private static string PercentDecode(string value)
+    {
+        if (value.IndexOf('%') < 0)
+        {
+            return value;
+        }
+
+        var sb = new StringBuilder(value.Length);
+        for (int i = 0; i < value.Length; i++)
+        {
+            if (
+                value[i] == '%'
+                && i + 2 < value.Length
+                && IsHexDigit(value[i + 1])
+                && IsHexDigit(value[i + 2])
+            )
+            {
+                int hi = HexVal(value[i + 1]);
+                int lo = HexVal(value[i + 2]);
+                sb.Append((char)((hi << 4) | lo));
+                i += 2;
+            }
+            else
+            {
+                sb.Append(value[i]);
+            }
+        }
+        return sb.ToString();
+    }
+
+    private static bool IsHexDigit(char c) =>
+        (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+
+    private static int HexVal(char c) =>
+        c >= '0' && c <= '9' ? c - '0'
+        : c >= 'A' && c <= 'F' ? c - 'A' + 10
+        : c - 'a' + 10;
+
+    /// <summary>
     /// Percent-encodes a string per RFC 3986 §2.1 using the PURL allowed set.
     /// Characters in the allowed set (alphanumeric plus .-_~) are not encoded.
     /// Characters listed in <paramref name="preserve"/> are also kept unencoded.
@@ -398,7 +440,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         int subpathIndex = remainder.LastIndexOf('#');
         if (subpathIndex >= 0)
         {
-            Subpath = ValidateSubpath(WebUtility.UrlDecode(remainder.Substring(subpathIndex + 1)));
+            Subpath = ValidateSubpath(PercentDecode(remainder.Substring(subpathIndex + 1)));
             remainder = remainder.Substring(0, subpathIndex);
         }
 
@@ -415,7 +457,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         int versionIndex = remainder.LastIndexOf('@');
         if (versionIndex >= 0 && versionIndex > lastSlash)
         {
-            Version = WebUtility.UrlDecode(remainder.Substring(versionIndex + 1));
+            Version = PercentDecode(remainder.Substring(versionIndex + 1));
             remainder = remainder.Substring(0, versionIndex);
         }
 
@@ -433,14 +475,14 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
 
         Type = ValidateType(firstPartArray[0]);
-        Name = ValidateName(WebUtility.UrlDecode(firstPartArray[firstPartArray.Length - 1]));
+        Name = ValidateName(PercentDecode(firstPartArray[firstPartArray.Length - 1]));
 
         // Test for namespaces
         if (firstPartArray.Length > 2)
         {
             string @namespace = string.Join("/", firstPartArray, 1, firstPartArray.Length - 2);
 
-            Namespace = ValidateNamespace(WebUtility.UrlDecode(@namespace));
+            Namespace = ValidateNamespace(PercentDecode(@namespace));
         }
     }
 
@@ -562,7 +604,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             if (eqIndex >= 0)
             {
                 string key = pair.Substring(0, eqIndex).ToLowerInvariant();
-                string value = WebUtility.UrlDecode(pair.Substring(eqIndex + 1));
+                string value = PercentDecode(pair.Substring(eqIndex + 1));
 
                 if (!IsValidQualifierKey(key))
                 {
