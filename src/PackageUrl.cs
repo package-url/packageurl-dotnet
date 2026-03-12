@@ -119,10 +119,10 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     )
     {
         Type = ValidateType(type);
+        Qualifiers = qualifiers;
         Namespace = ValidateNamespace(@namespace);
         Name = ValidateName(name);
-        Version = version;
-        Qualifiers = qualifiers;
+        Version = ValidateVersion(version);
         Subpath = ValidateSubpath(subpath);
     }
 
@@ -476,6 +476,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
 
         Type = ValidateType(firstPartArray[0]);
         Name = ValidateName(PercentDecode(firstPartArray[firstPartArray.Length - 1]));
+        Version = ValidateVersion(Version);
 
         // Test for namespaces
         if (firstPartArray.Length > 2)
@@ -544,7 +545,18 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
         return Type switch
         {
-            "bitbucket" or "github" or "pypi" or "gitlab" => @namespace.ToLowerInvariant(),
+            "alpm"
+            or "apk"
+            or "bitbucket"
+            or "composer"
+            or "deb"
+            or "github"
+            or "gitlab"
+            or "golang"
+            or "pypi"
+            or "qpkg"
+            or "rpm"
+                => @namespace.ToLowerInvariant(),
             _ => @namespace,
         };
     }
@@ -557,9 +569,48 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
         return Type switch
         {
-            "bitbucket" or "github" or "gitlab" => name.ToLowerInvariant(),
+            "alpm"
+            or "apk"
+            or "bitbucket"
+            or "bitnami"
+            or "composer"
+            or "deb"
+            or "github"
+            or "gitlab"
+            or "golang"
+                => name.ToLowerInvariant(),
             "pypi" => name.Replace('_', '-').ToLowerInvariant(),
+            "mlflow" => AdjustMlflowName(name),
             _ => name,
+        };
+    }
+
+    private string AdjustMlflowName(string name)
+    {
+        if (Qualifiers != null && Qualifiers.TryGetValue("repository_url", out string repoUrl))
+        {
+            if (repoUrl.Contains("azureml"))
+            {
+                return name;
+            }
+            if (repoUrl.Contains("databricks"))
+            {
+                return name.ToLowerInvariant();
+            }
+        }
+        return name;
+    }
+
+    private string? ValidateVersion(string? version)
+    {
+        if (version == null)
+        {
+            return null;
+        }
+        return Type switch
+        {
+            "huggingface" => version.ToLowerInvariant(),
+            _ => version,
         };
     }
 
