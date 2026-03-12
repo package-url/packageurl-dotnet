@@ -124,6 +124,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         Name = ValidateName(name);
         Version = ValidateVersion(version);
         Subpath = ValidateSubpath(subpath);
+        ValidateTypeConstraints();
     }
 
     /// <summary>
@@ -485,6 +486,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
 
             Namespace = ValidateNamespace(PercentDecode(@namespace));
         }
+
+        ValidateTypeConstraints();
     }
 
     private static string ValidateType(string type)
@@ -612,6 +615,62 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             "huggingface" => version.ToLowerInvariant(),
             _ => version,
         };
+    }
+
+    /// <summary>
+    /// Validates type-specific constraints after all components have been set.
+    /// </summary>
+    private void ValidateTypeConstraints()
+    {
+        switch (Type)
+        {
+            case "cpan":
+                if (Namespace == null)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A cpan purl must have a namespace (author)."
+                    );
+                }
+                if (Name.Contains("::"))
+                {
+                    throw new MalformedPackageUrlException(
+                        "A cpan distribution name must not contain '::'."
+                    );
+                }
+                break;
+            case "julia":
+                if (Qualifiers == null || !Qualifiers.ContainsKey("uuid"))
+                {
+                    throw new MalformedPackageUrlException(
+                        "A julia purl must have a 'uuid' qualifier."
+                    );
+                }
+                break;
+            case "otp":
+                if (Namespace != null)
+                {
+                    throw new MalformedPackageUrlException(
+                        "An otp purl must not have a namespace."
+                    );
+                }
+                break;
+            case "swift":
+                if (Namespace == null)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A swift purl must have a namespace."
+                    );
+                }
+                break;
+            case "vscode-extension":
+                if (Namespace == null)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A vscode-extension purl must have a namespace (publisher)."
+                    );
+                }
+                break;
+        }
     }
 
     private static bool IsValidQualifierKey(string key)
