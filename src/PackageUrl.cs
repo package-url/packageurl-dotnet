@@ -464,8 +464,9 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
 
         // The 'remainder' should now consist of the type, an optional namespace, and the name
 
-        // Strip zero or more '/' ('type')
-        remainder = remainder.Trim('/');
+        // Strip leading '/' characters (e.g. "//type/..." from authority-like prefix).
+        // Do NOT strip trailing '/' — a trailing slash indicates an empty name segment.
+        remainder = remainder.TrimStart('/');
 
         string[] firstPartArray = remainder.Split('/');
         if (firstPartArray.Length < 2)
