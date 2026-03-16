@@ -119,11 +119,12 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     )
     {
         Type = ValidateType(type);
+        Qualifiers = qualifiers;
         Namespace = ValidateNamespace(@namespace);
         Name = ValidateName(name);
-        Version = version;
-        Qualifiers = qualifiers;
+        Version = ValidateVersion(version);
         Subpath = ValidateSubpath(subpath);
+        ValidateTypeConstraints();
     }
 
     /// <summary>
@@ -180,7 +181,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             purl.Append("?");
             foreach (var pair in Qualifiers)
             {
-                string encodedValue = PercentEncode(pair.Value, "/");
+                string encodedValue = PercentEncode(pair.Value, ":");
                 purl.Append(pair.Key.ToLowerInvariant());
                 purl.Append('=');
                 purl.Append(encodedValue);
@@ -463,8 +464,9 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
 
         // The 'remainder' should now consist of the type, an optional namespace, and the name
 
-        // Strip zero or more '/' ('type')
-        remainder = remainder.Trim('/');
+        // Strip leading '/' characters (e.g. "//type/..." from authority-like prefix).
+        // Do NOT strip trailing '/' — a trailing slash indicates an empty name segment.
+        remainder = remainder.TrimStart('/');
 
         string[] firstPartArray = remainder.Split('/');
         if (firstPartArray.Length < 2)
@@ -476,6 +478,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
 
         Type = ValidateType(firstPartArray[0]);
         Name = ValidateName(PercentDecode(firstPartArray[firstPartArray.Length - 1]));
+        Version = ValidateVersion(Version);
 
         // Test for namespaces
         if (firstPartArray.Length > 2)
@@ -484,6 +487,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
 
             Namespace = ValidateNamespace(PercentDecode(@namespace));
         }
+
+        ValidateTypeConstraints();
     }
 
     private static string ValidateType(string type)
@@ -544,7 +549,18 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
         return Type switch
         {
-            "bitbucket" or "github" or "pypi" or "gitlab" => @namespace.ToLowerInvariant(),
+            "alpm"
+            or "apk"
+            or "bitbucket"
+            or "composer"
+            or "deb"
+            or "github"
+            or "gitlab"
+            or "golang"
+            or "pypi"
+            or "qpkg"
+            or "rpm"
+                => @namespace.ToLowerInvariant(),
             _ => @namespace,
         };
     }
@@ -557,10 +573,105 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
         return Type switch
         {
-            "bitbucket" or "github" or "gitlab" => name.ToLowerInvariant(),
+            "alpm"
+            or "apk"
+            or "bitbucket"
+            or "bitnami"
+            or "composer"
+            or "deb"
+            or "github"
+            or "gitlab"
+            or "golang"
+                => name.ToLowerInvariant(),
             "pypi" => name.Replace('_', '-').ToLowerInvariant(),
+            "mlflow" => AdjustMlflowName(name),
             _ => name,
         };
+    }
+
+    private string AdjustMlflowName(string name)
+    {
+        if (Qualifiers != null && Qualifiers.TryGetValue("repository_url", out string repoUrl))
+        {
+            if (repoUrl.Contains("azureml"))
+            {
+                return name;
+            }
+            if (repoUrl.Contains("databricks"))
+            {
+                return name.ToLowerInvariant();
+            }
+        }
+        return name;
+    }
+
+    private string? ValidateVersion(string? version)
+    {
+        if (version == null)
+        {
+            return null;
+        }
+        return Type switch
+        {
+            "huggingface" => version.ToLowerInvariant(),
+            _ => version,
+        };
+    }
+
+    /// <summary>
+    /// Validates type-specific constraints after all components have been set.
+    /// </summary>
+    private void ValidateTypeConstraints()
+    {
+        switch (Type)
+        {
+            case "cpan":
+                if (Namespace == null)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A cpan purl must have a namespace (author)."
+                    );
+                }
+                if (Name.Contains("::"))
+                {
+                    throw new MalformedPackageUrlException(
+                        "A cpan distribution name must not contain '::'."
+                    );
+                }
+                break;
+            case "julia":
+                if (Qualifiers == null || !Qualifiers.ContainsKey("uuid"))
+                {
+                    throw new MalformedPackageUrlException(
+                        "A julia purl must have a 'uuid' qualifier."
+                    );
+                }
+                break;
+            case "otp":
+                if (Namespace != null)
+                {
+                    throw new MalformedPackageUrlException(
+                        "An otp purl must not have a namespace."
+                    );
+                }
+                break;
+            case "swift":
+                if (Namespace == null)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A swift purl must have a namespace."
+                    );
+                }
+                break;
+            case "vscode-extension":
+                if (Namespace == null)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A vscode-extension purl must have a namespace (publisher)."
+                    );
+                }
+                break;
+        }
     }
 
     private static bool IsValidQualifierKey(string key)
