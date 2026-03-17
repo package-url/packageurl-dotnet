@@ -119,7 +119,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     )
     {
         Type = ValidateType(type);
-        Qualifiers = qualifiers;
+        Qualifiers = ValidateQualifierEntries(qualifiers);
         Namespace = ValidateNamespace(@namespace);
         Name = ValidateName(name);
         Version = ValidateVersion(version);
@@ -162,7 +162,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         purl.Append('/');
         if (Namespace != null)
         {
-            string encodedNamespace = PercentEncode(Namespace, "/");
+            string encodedNamespace = PercentEncode(Namespace, "/:");
             purl.Append(encodedNamespace);
             purl.Append('/');
         }
@@ -286,6 +286,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     /// Decodes percent-encoded sequences (%XX) without treating '+' as space.
     /// Unlike <see cref="WebUtility.UrlDecode"/>, which uses form-encoding rules,
     /// PURL uses strict percent-encoding where '+' is a literal character.
+    /// Consecutive percent-encoded bytes are accumulated and decoded as a single
+    /// UTF-8 sequence per ECMA-427 §5.4.
     /// </summary>
     private static string PercentDecode(string value)
     {
@@ -295,6 +297,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
 
         var sb = new StringBuilder(value.Length);
+        var byteBuffer = new List<byte>();
         for (int i = 0; i < value.Length; i++)
         {
             if (
@@ -306,13 +309,22 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             {
                 int hi = HexVal(value[i + 1]);
                 int lo = HexVal(value[i + 2]);
-                sb.Append((char)((hi << 4) | lo));
+                byteBuffer.Add((byte)((hi << 4) | lo));
                 i += 2;
             }
             else
             {
+                if (byteBuffer.Count > 0)
+                {
+                    sb.Append(Encoding.UTF8.GetString([.. byteBuffer]));
+                    byteBuffer.Clear();
+                }
                 sb.Append(value[i]);
             }
+        }
+        if (byteBuffer.Count > 0)
+        {
+            sb.Append(Encoding.UTF8.GetString([.. byteBuffer]));
         }
         return sb.ToString();
     }
@@ -399,16 +411,13 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
 
         // This is the purl (minus the scheme) that needs parsed.
-        string remainder = purl.Substring(4);
+        string remainder = purl[4..];
 
         // A purl must not contain a URL authority (no userinfo or port)
         if (remainder.Length >= 2 && remainder[0] == '/' && remainder[1] == '/')
         {
             int authorityEnd = remainder.IndexOf('/', 2);
-            string authority =
-                authorityEnd == -1
-                    ? remainder.Substring(2)
-                    : remainder.Substring(2, authorityEnd - 2);
+            string authority = authorityEnd == -1 ? remainder[2..] : remainder[2..authorityEnd];
 
             if (authority.IndexOf('@') >= 0)
             {
@@ -438,18 +447,21 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             }
         }
 
-        int subpathIndex = remainder.LastIndexOf('#');
+        // Per RFC 3986, the fragment starts at the first '#'.
+        int subpathIndex = remainder.IndexOf('#');
         if (subpathIndex >= 0)
         {
-            Subpath = ValidateSubpath(PercentDecode(remainder.Substring(subpathIndex + 1)));
-            remainder = remainder.Substring(0, subpathIndex);
+            Subpath = ValidateSubpath(PercentDecode(remainder[(subpathIndex + 1)..]));
+            remainder = remainder[..subpathIndex];
         }
 
-        int qualifiersIndex = remainder.LastIndexOf('?');
+        // Per RFC 3986, the query starts at the first '?' (before any fragment,
+        // which has already been stripped above).
+        int qualifiersIndex = remainder.IndexOf('?');
         if (qualifiersIndex >= 0)
         {
-            Qualifiers = ValidateQualifiers(remainder.Substring(qualifiersIndex + 1));
-            remainder = remainder.Substring(0, qualifiersIndex);
+            Qualifiers = ValidateQualifiers(remainder[(qualifiersIndex + 1)..]);
+            remainder = remainder[..qualifiersIndex];
         }
 
         // The version '@' separator can only appear in the last path segment.
@@ -458,8 +470,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         int versionIndex = remainder.LastIndexOf('@');
         if (versionIndex >= 0 && versionIndex > lastSlash)
         {
-            Version = PercentDecode(remainder.Substring(versionIndex + 1));
-            remainder = remainder.Substring(0, versionIndex);
+            Version = PercentDecode(remainder[(versionIndex + 1)..]);
+            remainder = remainder[..versionIndex];
         }
 
         // The 'remainder' should now consist of the type, an optional namespace, and the name
@@ -483,9 +495,24 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         // Test for namespaces
         if (firstPartArray.Length > 2)
         {
-            string @namespace = string.Join("/", firstPartArray, 1, firstPartArray.Length - 2);
+            // Decode each namespace segment individually per ECMA-427 §5.6.3.
+            // A decoded segment must not contain '/' characters; decoding the
+            // joined string would silently turn %2F into a segment separator.
+            var nsSegments = new string[firstPartArray.Length - 2];
+            for (int i = 1; i < firstPartArray.Length - 1; i++)
+            {
+                string decoded = PercentDecode(firstPartArray[i]);
+                if (decoded.IndexOf('/') >= 0)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A purl namespace segment must not contain '/' when percent-decoded."
+                    );
+                }
+                nsSegments[i - 1] = decoded;
+            }
+            string @namespace = string.Join("/", nsSegments);
 
-            Namespace = ValidateNamespace(PercentDecode(@namespace));
+            Namespace = ValidateNamespace(@namespace);
         }
 
         ValidateTypeConstraints();
@@ -493,17 +520,17 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
 
     private static string ValidateType(string type)
     {
-        if (type == null || type.Length < 2)
+        if (type == null || type.Length == 0)
         {
             throw new MalformedPackageUrlException(
-                "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
+                "The purl type is invalid. Must start with a letter and contain only letters, digits, '.', or '-'."
             );
         }
         char first = type[0];
         if (!((first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z')))
         {
             throw new MalformedPackageUrlException(
-                "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
+                "The purl type is invalid. Must start with a letter and contain only letters, digits, '.', or '-'."
             );
         }
         for (int i = 1; i < type.Length; i++)
@@ -520,7 +547,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             )
             {
                 throw new MalformedPackageUrlException(
-                    "The purl type is invalid. Must be at least two characters, start with a letter, and contain only letters, digits, '.', or '-'."
+                    "The purl type is invalid. Must start with a letter and contain only letters, digits, '.', or '-'."
                 );
             }
         }
@@ -559,8 +586,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             or "golang"
             or "pypi"
             or "qpkg"
-            or "rpm"
-                => @namespace.ToLowerInvariant(),
+            or "rpm" => @namespace.ToLowerInvariant(),
             _ => @namespace,
         };
     }
@@ -581,8 +607,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             or "deb"
             or "github"
             or "gitlab"
-            or "golang"
-                => name.ToLowerInvariant(),
+            or "golang" => name.ToLowerInvariant(),
             "pypi" => name.Replace('_', '-').ToLowerInvariant(),
             "mlflow" => AdjustMlflowName(name),
             _ => name,
@@ -658,9 +683,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             case "swift":
                 if (Namespace == null)
                 {
-                    throw new MalformedPackageUrlException(
-                        "A swift purl must have a namespace."
-                    );
+                    throw new MalformedPackageUrlException("A swift purl must have a namespace.");
                 }
                 break;
             case "vscode-extension":
@@ -714,8 +737,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             int eqIndex = pair.IndexOf('=');
             if (eqIndex >= 0)
             {
-                string key = pair.Substring(0, eqIndex).ToLowerInvariant();
-                string value = PercentDecode(pair.Substring(eqIndex + 1));
+                string key = pair[..eqIndex].ToLowerInvariant();
+                string value = PercentDecode(pair[(eqIndex + 1)..]);
 
                 if (!IsValidQualifierKey(key))
                 {
@@ -740,6 +763,46 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             }
         }
         return list;
+    }
+
+    /// <summary>
+    /// Validates pre-built qualifier entries, normalizing keys to lowercase and
+    /// filtering out entries with empty values per ECMA-427 §5.6.6.
+    /// </summary>
+    private static SortedDictionary<string, string>? ValidateQualifierEntries(
+        SortedDictionary<string, string>? qualifiers
+    )
+    {
+        if (qualifiers == null || qualifiers.Count == 0)
+        {
+            return qualifiers;
+        }
+
+        var normalized = new SortedDictionary<string, string>();
+        foreach (var pair in qualifiers)
+        {
+            string key = pair.Key.ToLowerInvariant();
+
+            if (!IsValidQualifierKey(key))
+            {
+                throw new MalformedPackageUrlException(
+                    $"Invalid purl qualifier key: '{key}'. Keys must start with a letter and contain only letters, digits, '.', '_', or '-'."
+                );
+            }
+
+            if (string.IsNullOrEmpty(pair.Value))
+            {
+                continue;
+            }
+
+            if (normalized.ContainsKey(key))
+            {
+                throw new MalformedPackageUrlException($"Duplicate purl qualifier key: '{key}'.");
+            }
+
+            normalized.Add(key, pair.Value);
+        }
+        return normalized.Count > 0 ? normalized : null;
     }
 
     private static string? ValidateSubpath(string? subpath)
