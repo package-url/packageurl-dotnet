@@ -316,7 +316,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             {
                 if (byteBuffer.Count > 0)
                 {
-                    sb.Append(Encoding.UTF8.GetString([.. byteBuffer]));
+                    sb.Append(Encoding.UTF8.GetString(byteBuffer.ToArray()));
                     byteBuffer.Clear();
                 }
                 sb.Append(value[i]);
@@ -324,7 +324,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
         if (byteBuffer.Count > 0)
         {
-            sb.Append(Encoding.UTF8.GetString([.. byteBuffer]));
+            sb.Append(Encoding.UTF8.GetString(byteBuffer.ToArray()));
         }
         return sb.ToString();
     }
@@ -411,13 +411,13 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
 
         // This is the purl (minus the scheme) that needs parsed.
-        string remainder = purl[4..];
+        string remainder = purl.Substring(4);
 
         // A purl must not contain a URL authority (no userinfo or port)
         if (remainder.Length >= 2 && remainder[0] == '/' && remainder[1] == '/')
         {
             int authorityEnd = remainder.IndexOf('/', 2);
-            string authority = authorityEnd == -1 ? remainder[2..] : remainder[2..authorityEnd];
+            string authority = authorityEnd == -1 ? remainder.Substring(2) : remainder.Substring(2, authorityEnd - 2);
 
             if (authority.IndexOf('@') >= 0)
             {
@@ -451,8 +451,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         int subpathIndex = remainder.IndexOf('#');
         if (subpathIndex >= 0)
         {
-            Subpath = ValidateSubpath(PercentDecode(remainder[(subpathIndex + 1)..]));
-            remainder = remainder[..subpathIndex];
+            Subpath = ValidateSubpath(PercentDecode(remainder.Substring(subpathIndex + 1)));
+            remainder = remainder.Substring(0, subpathIndex);
         }
 
         // Per RFC 3986, the query starts at the first '?' (before any fragment,
@@ -460,8 +460,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         int qualifiersIndex = remainder.IndexOf('?');
         if (qualifiersIndex >= 0)
         {
-            Qualifiers = ValidateQualifiers(remainder[(qualifiersIndex + 1)..]);
-            remainder = remainder[..qualifiersIndex];
+            Qualifiers = ValidateQualifiers(remainder.Substring(qualifiersIndex + 1));
+            remainder = remainder.Substring(0, qualifiersIndex);
         }
 
         // The version '@' separator can only appear in the last path segment.
@@ -470,8 +470,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         int versionIndex = remainder.LastIndexOf('@');
         if (versionIndex >= 0 && versionIndex > lastSlash)
         {
-            Version = PercentDecode(remainder[(versionIndex + 1)..]);
-            remainder = remainder[..versionIndex];
+            Version = PercentDecode(remainder.Substring(versionIndex + 1));
+            remainder = remainder.Substring(0, versionIndex);
         }
 
         // The 'remainder' should now consist of the type, an optional namespace, and the name
@@ -737,8 +737,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             int eqIndex = pair.IndexOf('=');
             if (eqIndex >= 0)
             {
-                string key = pair[..eqIndex].ToLowerInvariant();
-                string value = PercentDecode(pair[(eqIndex + 1)..]);
+                string key = pair.Substring(0, eqIndex).ToLowerInvariant();
+                string value = PercentDecode(pair.Substring(eqIndex + 1));
 
                 if (!IsValidQualifierKey(key))
                 {
