@@ -43,6 +43,8 @@ namespace PackageUrl;
 [Serializable]
 public sealed class PackageUrl : IEquatable<PackageUrl>
 {
+    private int _hashCode;
+
     /// <summary>
     /// The URL scheme. Always <c>"pkg"</c>.
     /// </summary>
@@ -88,6 +90,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     public PackageUrl(string purl)
     {
         Parse(purl);
+        _hashCode = ComputeHashCode();
     }
 
     /// <summary>
@@ -125,12 +128,133 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         Version = ValidateVersion(version);
         Subpath = ValidateSubpath(subpath);
         ValidateTypeConstraints();
+        _hashCode = ComputeHashCode();
     }
 
     /// <summary>
     /// Returns the canonical string representation of this PURL.
     /// </summary>
     public override string ToString()
+    {
+#if NET8_0_OR_GREATER
+        return ToStringSpan();
+#else
+        return ToStringBuilder();
+#endif
+    }
+
+#if NET8_0_OR_GREATER
+    private string ToStringSpan()
+    {
+        // First pass: compute exact length
+        int length = 4 + 1; // "pkg:" + "/"
+        length += Type.Length;
+
+        if (Namespace != null)
+        {
+            length += PercentEncodedLength(Namespace, "/:");
+            length += 1; // trailing '/'
+        }
+
+        length += PercentEncodedLength(Name, ":");
+
+        if (Version != null)
+        {
+            length += 1; // '@'
+            length += PercentEncodedLength(Version, ":");
+        }
+
+        if (Qualifiers != null && Qualifiers.Count > 0)
+        {
+            length += 1; // '?'
+            bool first = true;
+            foreach (var pair in Qualifiers)
+            {
+                if (!first)
+                {
+                    length += 1; // '&'
+                }
+
+                first = false;
+                length += pair.Key.Length; // keys are already lowercase
+                length += 1; // '='
+                length += PercentEncodedLength(pair.Value, ":");
+            }
+        }
+
+        if (Subpath != null)
+        {
+            length += 1; // '#'
+            length += PercentEncodedLength(Subpath, "/:");
+        }
+
+        return string.Create(
+            length,
+            this,
+            static (span, self) =>
+            {
+                int pos = 0;
+
+                // "pkg:"
+                "pkg:".AsSpan().CopyTo(span);
+                pos += 4;
+
+                // type
+                self.Type.AsSpan().CopyTo(span.Slice(pos));
+                pos += self.Type.Length;
+
+                // "/"
+                span[pos++] = '/';
+
+                // namespace
+                if (self.Namespace != null)
+                {
+                    pos += PercentEncodeInto(span.Slice(pos), self.Namespace, "/:");
+                    span[pos++] = '/';
+                }
+
+                // name
+                pos += PercentEncodeInto(span.Slice(pos), self.Name, ":");
+
+                // version
+                if (self.Version != null)
+                {
+                    span[pos++] = '@';
+                    pos += PercentEncodeInto(span.Slice(pos), self.Version, ":");
+                }
+
+                // qualifiers
+                if (self.Qualifiers != null && self.Qualifiers.Count > 0)
+                {
+                    span[pos++] = '?';
+                    bool first = true;
+                    foreach (var pair in self.Qualifiers)
+                    {
+                        if (!first)
+                        {
+                            span[pos++] = '&';
+                        }
+
+                        first = false;
+                        pair.Key.AsSpan().CopyTo(span.Slice(pos));
+                        pos += pair.Key.Length;
+                        span[pos++] = '=';
+                        pos += PercentEncodeInto(span.Slice(pos), pair.Value, ":");
+                    }
+                }
+
+                // subpath
+                if (self.Subpath != null)
+                {
+                    span[pos++] = '#';
+                    pos += PercentEncodeInto(span.Slice(pos), self.Subpath, "/:");
+                }
+            }
+        );
+    }
+#endif
+
+    private string ToStringBuilder()
     {
         int capacity = 4 + 1; // "pkg:"  + "/"
         if (Type != null)
@@ -151,6 +275,19 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         if (Version != null)
         {
             capacity += Version.Length + 1;
+        }
+
+        if (Qualifiers != null)
+        {
+            foreach (var pair in Qualifiers)
+            {
+                capacity += pair.Key.Length + 1 + pair.Value.Length + 1;
+            }
+        }
+
+        if (Subpath != null)
+        {
+            capacity += Subpath.Length + 1;
         }
 
         var purl = new StringBuilder(capacity);
@@ -178,11 +315,11 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
         if (Qualifiers != null && Qualifiers.Count > 0)
         {
-            purl.Append("?");
+            purl.Append('?');
             foreach (var pair in Qualifiers)
             {
                 string encodedValue = PercentEncode(pair.Value, ":");
-                purl.Append(pair.Key.ToLowerInvariant());
+                purl.Append(pair.Key);
                 purl.Append('=');
                 purl.Append(encodedValue);
                 purl.Append('&');
@@ -192,7 +329,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         if (Subpath != null)
         {
             string encodedSubpath = PercentEncode(Subpath, "/:");
-            purl.Append("#").Append(encodedSubpath);
+            purl.Append('#').Append(encodedSubpath);
         }
         return purl.ToString();
     }
@@ -210,7 +347,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             return true;
         }
 
-        return string.Equals(Type, other.Type, StringComparison.Ordinal)
+        return _hashCode == other._hashCode
+            && string.Equals(Type, other.Type, StringComparison.Ordinal)
             && string.Equals(Name, other.Name, StringComparison.Ordinal)
             && string.Equals(Namespace, other.Namespace, StringComparison.Ordinal)
             && string.Equals(Version, other.Version, StringComparison.Ordinal)
@@ -222,7 +360,9 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     public override bool Equals(object? obj) => Equals(obj as PackageUrl);
 
     /// <inheritdoc />
-    public override int GetHashCode()
+    public override int GetHashCode() => _hashCode;
+
+    private int ComputeHashCode()
     {
         unchecked
         {
@@ -296,6 +436,70 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             return value;
         }
 
+#if NET8_0_OR_GREATER
+        return PercentDecodeSpan(value.AsSpan());
+#else
+        return PercentDecodeLegacy(value);
+#endif
+    }
+
+#if NET8_0_OR_GREATER
+    private static string PercentDecodeSpan(ReadOnlySpan<char> value)
+    {
+        if (value.IndexOf('%') < 0)
+        {
+            return value.ToString();
+        }
+
+        Span<byte> byteBuffer =
+            value.Length <= 256 ? stackalloc byte[value.Length] : new byte[value.Length];
+        int byteCount = 0;
+
+        char[] outputArray = new char[value.Length];
+        int outputPos = 0;
+
+        for (int i = 0; i < value.Length; i++)
+        {
+            if (
+                value[i] == '%'
+                && i + 2 < value.Length
+                && IsHexDigit(value[i + 1])
+                && IsHexDigit(value[i + 2])
+            )
+            {
+                int hi = HexVal(value[i + 1]);
+                int lo = HexVal(value[i + 2]);
+                byteBuffer[byteCount++] = (byte)((hi << 4) | lo);
+                i += 2;
+            }
+            else
+            {
+                if (byteCount > 0)
+                {
+                    int charCount = Encoding.UTF8.GetChars(
+                        byteBuffer.Slice(0, byteCount),
+                        outputArray.AsSpan(outputPos)
+                    );
+                    outputPos += charCount;
+                    byteCount = 0;
+                }
+                outputArray[outputPos++] = value[i];
+            }
+        }
+        if (byteCount > 0)
+        {
+            int charCount = Encoding.UTF8.GetChars(
+                byteBuffer.Slice(0, byteCount),
+                outputArray.AsSpan(outputPos)
+            );
+            outputPos += charCount;
+        }
+        return new string(outputArray, 0, outputPos);
+    }
+#endif
+
+    private static string PercentDecodeLegacy(string value)
+    {
         var sb = new StringBuilder(value.Length);
         var byteBuffer = new List<byte>();
         for (int i = 0; i < value.Length; i++)
@@ -337,6 +541,15 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         : c >= 'A' && c <= 'F' ? c - 'A' + 10
         : c - 'a' + 10;
 
+    private static bool IsUnreserved(char c) =>
+        (c >= 'A' && c <= 'Z')
+        || (c >= 'a' && c <= 'z')
+        || (c >= '0' && c <= '9')
+        || c == '.'
+        || c == '-'
+        || c == '_'
+        || c == '~';
+
     /// <summary>
     /// Percent-encodes a string per RFC 3986 §2.1 using the PURL allowed set.
     /// Characters in the allowed set (alphanumeric plus .-_~) are not encoded.
@@ -349,16 +562,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         for (int i = 0; i < value.Length; i++)
         {
             char c = value[i];
-            if (
-                (c >= 'A' && c <= 'Z')
-                || (c >= 'a' && c <= 'z')
-                || (c >= '0' && c <= '9')
-                || c == '.'
-                || c == '-'
-                || c == '_'
-                || c == '~'
-                || (preserve != null && preserve.IndexOf(c) >= 0)
-            )
+            if (IsUnreserved(c) || (preserve != null && preserve.IndexOf(c) >= 0))
             {
                 continue;
             }
@@ -375,16 +579,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         foreach (byte b in bytes)
         {
             char c = (char)b;
-            if (
-                (c >= 'A' && c <= 'Z')
-                || (c >= 'a' && c <= 'z')
-                || (c >= '0' && c <= '9')
-                || c == '.'
-                || c == '-'
-                || c == '_'
-                || c == '~'
-                || (preserve != null && preserve.IndexOf(c) >= 0)
-            )
+            if (IsUnreserved(c) || (preserve != null && preserve.IndexOf(c) >= 0))
             {
                 sb.Append(c);
             }
@@ -397,6 +592,75 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         return sb.ToString();
     }
 
+#if NET8_0_OR_GREATER
+    private static bool NeedsPercentEncoding(string value, string preserve)
+    {
+        for (int i = 0; i < value.Length; i++)
+        {
+            char c = value[i];
+            if (!IsUnreserved(c) && preserve.IndexOf(c) < 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int PercentEncodedLength(string value, string preserve)
+    {
+        if (!NeedsPercentEncoding(value, preserve))
+        {
+            return value.Length;
+        }
+
+        int length = 0;
+        byte[] bytes = Encoding.UTF8.GetBytes(value);
+        foreach (byte b in bytes)
+        {
+            char c = (char)b;
+            if (IsUnreserved(c) || preserve.IndexOf(c) >= 0)
+            {
+                length += 1;
+            }
+            else
+            {
+                length += 3;
+            }
+        }
+        return length;
+    }
+
+    private static int PercentEncodeInto(Span<char> destination, string value, string preserve)
+    {
+        if (!NeedsPercentEncoding(value, preserve))
+        {
+            value.AsSpan().CopyTo(destination);
+            return value.Length;
+        }
+
+        byte[] bytes = Encoding.UTF8.GetBytes(value);
+        int pos = 0;
+        foreach (byte b in bytes)
+        {
+            char c = (char)b;
+            if (IsUnreserved(c) || preserve.IndexOf(c) >= 0)
+            {
+                destination[pos++] = c;
+            }
+            else
+            {
+                destination[pos++] = '%';
+                destination[pos++] = HexChar(b >> 4);
+                destination[pos++] = HexChar(b & 0xF);
+            }
+        }
+        return pos;
+    }
+
+    private static char HexChar(int nibble) =>
+        (char)(nibble < 10 ? '0' + nibble : 'A' + nibble - 10);
+#endif
+
     private void Parse(string purl)
     {
         if (purl == null || string.IsNullOrWhiteSpace(purl))
@@ -404,20 +668,239 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             throw new MalformedPackageUrlException("The purl string is null or empty.");
         }
 
+#if NET8_0_OR_GREATER
+        ParseSpan(purl);
+#else
+        ParseLegacy(purl);
+#endif
+    }
+
+#if NET8_0_OR_GREATER
+    private void ParseSpan(string purl)
+    {
+        ReadOnlySpan<char> span = purl.AsSpan();
+
+        // Validate scheme
+        if (
+            span.Length < 4
+            || (span[0] != 'p' && span[0] != 'P')
+            || (span[1] != 'k' && span[1] != 'K')
+            || (span[2] != 'g' && span[2] != 'G')
+            || span[3] != ':'
+        )
+        {
+            throw new MalformedPackageUrlException("The purl scheme must be 'pkg'.");
+        }
+
+        ReadOnlySpan<char> remainder = span.Slice(4);
+
+        // A purl must not contain a URL authority (no userinfo or port)
+        if (remainder.Length >= 2 && remainder[0] == '/' && remainder[1] == '/')
+        {
+            int authorityEnd = remainder.Slice(2).IndexOf('/');
+            ReadOnlySpan<char> authority =
+                authorityEnd == -1 ? remainder.Slice(2) : remainder.Slice(2, authorityEnd);
+
+            if (authority.IndexOf('@') >= 0)
+            {
+                throw new MalformedPackageUrlException(
+                    "A purl must not contain a user, password, or port."
+                );
+            }
+
+            int colonIdx = authority.LastIndexOf(':');
+            if (colonIdx >= 0 && colonIdx < authority.Length - 1)
+            {
+                bool isPort = true;
+                for (int i = colonIdx + 1; i < authority.Length; i++)
+                {
+                    if (authority[i] < '0' || authority[i] > '9')
+                    {
+                        isPort = false;
+                        break;
+                    }
+                }
+                if (isPort)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A purl must not contain a user, password, or port."
+                    );
+                }
+            }
+        }
+
+        // Per RFC 3986, the fragment starts at the first '#'.
+        int subpathIndex = remainder.IndexOf('#');
+        if (subpathIndex >= 0)
+        {
+            Subpath = ValidateSubpath(PercentDecodeSpan(remainder.Slice(subpathIndex + 1)));
+            remainder = remainder.Slice(0, subpathIndex);
+        }
+
+        // Per RFC 3986, the query starts at the first '?'
+        int qualifiersIndex = remainder.IndexOf('?');
+        if (qualifiersIndex >= 0)
+        {
+            Qualifiers = ValidateQualifiersSpan(remainder.Slice(qualifiersIndex + 1));
+            remainder = remainder.Slice(0, qualifiersIndex);
+        }
+
+        // The version '@' separator can only appear in the last path segment.
+        int lastSlash = remainder.LastIndexOf('/');
+        int versionIndex = remainder.LastIndexOf('@');
+        if (versionIndex >= 0 && versionIndex > lastSlash)
+        {
+            Version = PercentDecodeSpan(remainder.Slice(versionIndex + 1));
+            remainder = remainder.Slice(0, versionIndex);
+        }
+
+        // Strip leading '/' characters
+        while (remainder.Length > 0 && remainder[0] == '/')
+        {
+            remainder = remainder.Slice(1);
+        }
+
+        // Find first '/' to split type from the rest
+        int firstSlashIdx = remainder.IndexOf('/');
+        if (firstSlashIdx < 0)
+        {
+            throw new MalformedPackageUrlException(
+                "The purl must contain at least a type and a name (e.g., pkg:type/name)."
+            );
+        }
+
+        Type = ValidateType(remainder.Slice(0, firstSlashIdx).ToString());
+
+        ReadOnlySpan<char> pathRemainder = remainder.Slice(firstSlashIdx + 1);
+
+        // Find last '/' in pathRemainder to split name from namespace
+        int lastPathSlash = pathRemainder.LastIndexOf('/');
+        if (lastPathSlash < 0)
+        {
+            // No namespace, just name
+            Name = ValidateName(PercentDecodeSpan(pathRemainder));
+        }
+        else
+        {
+            // name is after the last slash
+            Name = ValidateName(PercentDecodeSpan(pathRemainder.Slice(lastPathSlash + 1)));
+
+            // namespace is everything before the last slash
+            ReadOnlySpan<char> nsSpan = pathRemainder.Slice(0, lastPathSlash);
+
+            // Decode each segment individually per ECMA-427 §5.6.3
+            var nsBuilder = new StringBuilder(nsSpan.Length);
+            bool firstSeg = true;
+            while (nsSpan.Length > 0)
+            {
+                int slashIdx = nsSpan.IndexOf('/');
+                ReadOnlySpan<char> segment;
+                if (slashIdx < 0)
+                {
+                    segment = nsSpan;
+                    nsSpan = ReadOnlySpan<char>.Empty;
+                }
+                else
+                {
+                    segment = nsSpan.Slice(0, slashIdx);
+                    nsSpan = nsSpan.Slice(slashIdx + 1);
+                }
+
+                string decoded = PercentDecodeSpan(segment);
+                if (decoded.IndexOf('/') >= 0)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A purl namespace segment must not contain '/' when percent-decoded."
+                    );
+                }
+
+                if (!firstSeg)
+                {
+                    nsBuilder.Append('/');
+                }
+
+                firstSeg = false;
+                nsBuilder.Append(decoded);
+            }
+
+            Namespace = ValidateNamespace(nsBuilder.ToString());
+        }
+
+        Version = ValidateVersion(Version);
+        ValidateTypeConstraints();
+    }
+
+    private static SortedDictionary<string, string> ValidateQualifiersSpan(
+        ReadOnlySpan<char> qualifiers
+    )
+    {
+        var list = new SortedDictionary<string, string>();
+
+        while (qualifiers.Length > 0)
+        {
+            int ampIdx = qualifiers.IndexOf('&');
+            ReadOnlySpan<char> pair;
+            if (ampIdx < 0)
+            {
+                pair = qualifiers;
+                qualifiers = ReadOnlySpan<char>.Empty;
+            }
+            else
+            {
+                pair = qualifiers.Slice(0, ampIdx);
+                qualifiers = qualifiers.Slice(ampIdx + 1);
+            }
+
+            int eqIndex = pair.IndexOf('=');
+            if (eqIndex >= 0)
+            {
+                string key = pair.Slice(0, eqIndex).ToString().ToLowerInvariant();
+                string value = PercentDecodeSpan(pair.Slice(eqIndex + 1));
+
+                if (!IsValidQualifierKey(key))
+                {
+                    throw new MalformedPackageUrlException(
+                        $"Invalid purl qualifier key: '{key}'. Keys must start with a letter and contain only letters, digits, '.', '_', or '-'."
+                    );
+                }
+
+                if (string.IsNullOrEmpty(value))
+                {
+                    continue;
+                }
+
+                if (list.ContainsKey(key))
+                {
+                    throw new MalformedPackageUrlException(
+                        $"Duplicate purl qualifier key: '{key}'."
+                    );
+                }
+
+                list.Add(key, value);
+            }
+        }
+        return list;
+    }
+#endif
+
+    private void ParseLegacy(string purl)
+    {
         // Validate scheme
         if (!purl.StartsWith("pkg:", StringComparison.OrdinalIgnoreCase))
         {
             throw new MalformedPackageUrlException("The purl scheme must be 'pkg'.");
         }
 
-        // This is the purl (minus the scheme) that needs parsed.
         string remainder = purl.Substring(4);
 
         // A purl must not contain a URL authority (no userinfo or port)
         if (remainder.Length >= 2 && remainder[0] == '/' && remainder[1] == '/')
         {
             int authorityEnd = remainder.IndexOf('/', 2);
-            string authority = authorityEnd == -1 ? remainder.Substring(2) : remainder.Substring(2, authorityEnd - 2);
+            string authority =
+                authorityEnd == -1
+                    ? remainder.Substring(2)
+                    : remainder.Substring(2, authorityEnd - 2);
 
             if (authority.IndexOf('@') >= 0)
             {
@@ -616,7 +1099,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
 
     private string AdjustMlflowName(string name)
     {
-        if (Qualifiers != null && Qualifiers.TryGetValue("repository_url", out string repoUrl))
+        if (Qualifiers != null && Qualifiers.TryGetValue("repository_url", out string? repoUrl))
         {
             if (repoUrl.Contains("azureml"))
             {
