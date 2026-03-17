@@ -6,4 +6,5 @@
   </Folder>
   <Project Path="src/PackageUrl.csproj" />
   <Project Path="tests/PackageUrl.Tests.csproj" />
+  <Project Path="benchmarks/PackageUrl.Benchmarks.csproj" />
 </Solution>
