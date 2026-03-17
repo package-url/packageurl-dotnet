@@ -4,7 +4,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="GitVersion.MsBuild" Version="5.8.1" />
+    <PackageVersion Include="MinVer" Version="7.0.0" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
   </ItemGroup>
 </Project>

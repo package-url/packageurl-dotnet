@@ -25,11 +25,6 @@ jobs:
 
       - name: Build & Test
         run: |
-          # Workaround for https://github.com/GitTools/GitVersion/issues/2838
-          if [[ $GITHUB_REF_TYPE == tag ]]; then
-            echo Unsetting GITHUB_REF
-            unset GITHUB_REF
-          fi
           dotnet test --configuration Release
           dotnet pack --no-restore --configuration Release
 
@@ -63,8 +58,8 @@ jobs:
 
       - name: Release & Publish to nuget.org
         run: |
-          echo 'Creating Release ${{ env.GitVersion_SemVer }}'
-          gh release create '${{ env.GitVersion_SemVer }}' ./nuget/* --target '${{ github.sha }}' --generate-notes
+          echo 'Creating Release ${{ github.ref_name }}'
+          gh release create '${{ github.ref_name }}' ./nuget/* --target '${{ github.sha }}' --generate-notes
           dotnet nuget push "nuget/*.nupkg" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
