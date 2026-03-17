@@ -15,13 +15,12 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 
     <!--
-      Source Link
+      Source Link (included in .NET 8+ SDK)
       https://github.com/dotnet/sourcelink
     -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <!--
@@ -35,9 +34,6 @@
   <!-- Common references for all projects -->
   <ItemGroup>
     <PackageReference Include="GitVersion.MsBuild">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.SourceLink.GitHub">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
