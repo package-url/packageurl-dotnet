@@ -40,10 +40,9 @@ namespace PackageUrl;
 /// See <see href="https://ecma-tc54.github.io/ECMA-427/">ECMA-427</see> for the full specification.
 /// </para>
 /// </summary>
-[Serializable]
 public sealed class PackageUrl : IEquatable<PackageUrl>
 {
-    private int _hashCode;
+    private readonly int _hashCode;
 
     /// <summary>
     /// The URL scheme. Always <c>"pkg"</c>.
