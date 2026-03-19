@@ -1066,9 +1066,14 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             or "github"
             or "gitlab"
             or "golang"
+            or "hex"
+            or "luarocks"
+            or "npm"
             or "pypi"
             or "qpkg"
-            or "rpm" => @namespace.ToLowerInvariant(),
+            or "rpm"
+            or "vscode-extension"
+            or "yocto" => @namespace.ToLowerInvariant(),
             _ => @namespace,
         };
     }
@@ -1089,7 +1094,14 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             or "deb"
             or "github"
             or "gitlab"
-            or "golang" => name.ToLowerInvariant(),
+            or "golang"
+            or "hex"
+            or "luarocks"
+            or "npm"
+            or "oci"
+            or "otp"
+            or "pub"
+            or "vscode-extension" => name.ToLowerInvariant(),
             "pypi" => name.Replace('_', '-').ToLowerInvariant(),
             "mlflow" => AdjustMlflowName(name),
             _ => name,
@@ -1120,7 +1132,7 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
         }
         return Type switch
         {
-            "huggingface" => version.ToLowerInvariant(),
+            "huggingface" or "oci" or "pypi" or "vscode-extension" => version.ToLowerInvariant(),
             _ => version,
         };
     }
@@ -1132,6 +1144,23 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
     {
         switch (Type)
         {
+            // Types that require a namespace
+            case "alpm":
+            case "apk":
+            case "bitbucket":
+            case "composer":
+            case "deb":
+            case "github":
+            case "golang":
+            case "huggingface":
+            case "maven":
+            case "qpkg":
+            case "rpm":
+                if (Namespace == null)
+                {
+                    throw new MalformedPackageUrlException($"A {Type} purl must have a namespace.");
+                }
+                break;
             case "cpan":
                 if (Namespace == null)
                 {
@@ -1146,22 +1175,6 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
                     );
                 }
                 break;
-            case "julia":
-                if (Qualifiers == null || !Qualifiers.ContainsKey("uuid"))
-                {
-                    throw new MalformedPackageUrlException(
-                        "A julia purl must have a 'uuid' qualifier."
-                    );
-                }
-                break;
-            case "otp":
-                if (Namespace != null)
-                {
-                    throw new MalformedPackageUrlException(
-                        "An otp purl must not have a namespace."
-                    );
-                }
-                break;
             case "swift":
                 if (Namespace == null)
                 {
@@ -1173,6 +1186,54 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
                 {
                     throw new MalformedPackageUrlException(
                         "A vscode-extension purl must have a namespace (publisher)."
+                    );
+                }
+                break;
+
+            // Types that prohibit a namespace
+            case "bazel":
+            case "bitnami":
+            case "cargo":
+            case "cocoapods":
+            case "conda":
+            case "cran":
+            case "gem":
+            case "hackage":
+            case "mlflow":
+            case "nuget":
+            case "oci":
+            case "opam":
+            case "otp":
+            case "pub":
+            case "pypi":
+                if (Namespace != null)
+                {
+                    throw new MalformedPackageUrlException(
+                        $"A {Type} purl must not have a namespace."
+                    );
+                }
+                break;
+            case "julia":
+                if (Namespace != null)
+                {
+                    throw new MalformedPackageUrlException(
+                        "A julia purl must not have a namespace."
+                    );
+                }
+                if (Qualifiers == null || !Qualifiers.ContainsKey("uuid"))
+                {
+                    throw new MalformedPackageUrlException(
+                        "A julia purl must have a 'uuid' qualifier."
+                    );
+                }
+                break;
+
+            // Types with required qualifiers
+            case "swid":
+                if (Qualifiers == null || !Qualifiers.ContainsKey("tag_id"))
+                {
+                    throw new MalformedPackageUrlException(
+                        "A swid purl must have a 'tag_id' qualifier."
                     );
                 }
                 break;
