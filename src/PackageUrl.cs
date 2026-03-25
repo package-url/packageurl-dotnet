@@ -1151,7 +1151,8 @@ public sealed class PackageUrl : IEquatable<PackageUrl>
             case "composer":
             case "deb":
             case "github":
-            case "golang":
+            // https://github.com/package-url/purl-spec/issues/817
+            // case "golang":
             case "huggingface":
             case "maven":
             case "qpkg":
