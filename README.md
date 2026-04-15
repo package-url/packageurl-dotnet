@@ -25,7 +25,7 @@ Or in your project file:
 Parse a PURL string:
 
 ```csharp
-var purl = new PackageUrl("pkg:nuget/Newtonsoft.Json@13.0.1");
+var purl = new PackageURL("pkg:nuget/Newtonsoft.Json@13.0.1");
 
 Console.WriteLine(purl.Type);      // nuget
 Console.WriteLine(purl.Name);      // Newtonsoft.Json
@@ -35,7 +35,7 @@ Console.WriteLine(purl.Version);   // 13.0.1
 Build one from parts:
 
 ```csharp
-var purl = new PackageUrl(
+var purl = new PackageURL(
     type: "maven",
     @namespace: "org.apache.commons",
     name: "commons-lang3",
@@ -50,7 +50,7 @@ Console.WriteLine(purl.ToString());
 There's also a two-argument shorthand if you only need type and name:
 
 ```csharp
-var purl = new PackageUrl("npm", "lodash");
+var purl = new PackageURL("npm", "lodash");
 ```
 
 ## Build from source

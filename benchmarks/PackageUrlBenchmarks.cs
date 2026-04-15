@@ -18,7 +18,7 @@ public class PackageUrlBenchmarks
             "pkg:maven/org.apache/xmlgraphics-commons@1.5?classifier=sources&repository_url=repo.spring.io#src/main/java",
     };
 
-    private readonly Dictionary<string, PackageUrl> _parsed = new();
+    private readonly Dictionary<string, PackageURL> _parsed = new();
 
     [ParamsSource(nameof(PurlNames))]
     public string Purl { get; set; } = null!;
@@ -30,7 +30,7 @@ public class PackageUrlBenchmarks
     {
         foreach (var kvp in _purls)
         {
-            _parsed[kvp.Key] = new PackageUrl(kvp.Value);
+            _parsed[kvp.Key] = new PackageURL(kvp.Value);
         }
     }
 
@@ -38,7 +38,7 @@ public class PackageUrlBenchmarks
 
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Parse")]
-    public PackageUrl Parse() => new(_purls[Purl]);
+    public PackageURL Parse() => new(_purls[Purl]);
 
     // --- ToString ---
 
