@@ -37,11 +37,11 @@ public class PackageUrlSpecificationTests
     {
         if (data.ExpectedFailure)
         {
-            Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(data.InputPurl!));
+            Assert.Throws<MalformedPackageUrlException>(() => new PackageURL(data.InputPurl!));
             return;
         }
 
-        PackageUrl purl = new(data.InputPurl!);
+        PackageURL purl = new(data.InputPurl!);
         var expected = data.ExpectedComponents!;
 
         Assert.Equal("pkg", purl.Scheme);
@@ -70,7 +70,7 @@ public class PackageUrlSpecificationTests
         if (data.ExpectedFailure)
         {
             Assert.Throws<MalformedPackageUrlException>(() =>
-                new PackageUrl(
+                new PackageURL(
                     input.Type!,
                     input.Namespace,
                     input.Name!,
@@ -82,7 +82,7 @@ public class PackageUrlSpecificationTests
             return;
         }
 
-        PackageUrl purl = new(
+        PackageURL purl = new(
             input.Type!,
             input.Namespace,
             input.Name!,
@@ -100,11 +100,11 @@ public class PackageUrlSpecificationTests
     {
         if (data.ExpectedFailure)
         {
-            Assert.Throws<MalformedPackageUrlException>(() => new PackageUrl(data.InputPurl!));
+            Assert.Throws<MalformedPackageUrlException>(() => new PackageURL(data.InputPurl!));
             return;
         }
 
-        PackageUrl purl = new(data.InputPurl!);
+        PackageURL purl = new(data.InputPurl!);
         Assert.Equal(data.ExpectedPurl, purl.ToString());
     }
 }
