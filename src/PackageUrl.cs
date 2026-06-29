@@ -1157,6 +1157,8 @@ public sealed class PackageURL : IEquatable<PackageURL>
             case "maven":
             case "qpkg":
             case "rpm":
+            case "swift":
+            case "vscode-extension":
                 if (Namespace == null)
                 {
                     throw new MalformedPackageUrlException($"A {Type} purl must have a namespace.");
@@ -1173,20 +1175,6 @@ public sealed class PackageURL : IEquatable<PackageURL>
                 {
                     throw new MalformedPackageUrlException(
                         "A cpan distribution name must not contain '::'."
-                    );
-                }
-                break;
-            case "swift":
-                if (Namespace == null)
-                {
-                    throw new MalformedPackageUrlException("A swift purl must have a namespace.");
-                }
-                break;
-            case "vscode-extension":
-                if (Namespace == null)
-                {
-                    throw new MalformedPackageUrlException(
-                        "A vscode-extension purl must have a namespace (publisher)."
                     );
                 }
                 break;
@@ -1207,6 +1195,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
             case "otp":
             case "pub":
             case "pypi":
+            case "vcpkg":
                 if (Namespace != null)
                 {
                     throw new MalformedPackageUrlException(
