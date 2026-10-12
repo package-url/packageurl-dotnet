@@ -20,6 +20,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Text;
 
 namespace PackageUrl;
@@ -42,6 +43,8 @@ namespace PackageUrl;
 /// </summary>
 public sealed class PackageURL : IEquatable<PackageURL>
 {
+    private static readonly UTF8Encoding s_utf8 = new UTF8Encoding(false, true);
+
     private readonly int _hashCode;
 
     /// <summary>
@@ -71,10 +74,10 @@ public sealed class PackageURL : IEquatable<PackageURL>
     public string? Version { get; private set; }
 
     /// <summary>
-    /// Qualifier key/value pairs for the package, such as OS, architecture, or distribution.
-    /// May be <see langword="null"/>.
+    /// Read-only qualifier key/value pairs, ordered by key using ordinal comparison.
+    /// <see langword="null"/> when no nonempty qualifier values are present.
     /// </summary>
-    public SortedDictionary<string, string>? Qualifiers { get; private set; }
+    public IReadOnlyDictionary<string, string>? Qualifiers { get; private set; }
 
     /// <summary>
     /// A path relative to the package root, or <see langword="null"/> if unspecified.
@@ -102,13 +105,14 @@ public sealed class PackageURL : IEquatable<PackageURL>
         : this(type, null, name, null, null, null) { }
 
     /// <summary>
-    /// Creates a <see cref="PackageURL"/> from individual components.
+    /// Creates a <see cref="PackageURL"/> from decoded components.
+    /// Literal percent signs are treated as data, not as percent-encoded sequences.
     /// </summary>
     /// <param name="type">The package type (e.g. nuget, npm, gem).</param>
     /// <param name="namespace">The type-specific namespace (e.g. Maven groupId, GitHub user), or <see langword="null"/>.</param>
     /// <param name="name">The package name.</param>
     /// <param name="version">The package version, or <see langword="null"/>.</param>
-    /// <param name="qualifiers">Qualifier key/value pairs, or <see langword="null"/>.</param>
+    /// <param name="qualifiers">Qualifier key/value pairs to copy, or <see langword="null"/>.</param>
     /// <param name="subpath">A path relative to the package root, or <see langword="null"/>.</param>
     /// <exception cref="MalformedPackageUrlException">Thrown if any component is invalid.</exception>
     public PackageURL(
@@ -116,7 +120,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         string? @namespace,
         string name,
         string? version,
-        SortedDictionary<string, string>? qualifiers,
+        IReadOnlyDictionary<string, string>? qualifiers,
         string? subpath
     )
     {
@@ -389,8 +393,8 @@ public sealed class PackageURL : IEquatable<PackageURL>
     public static bool operator !=(PackageURL? left, PackageURL? right) => !(left == right);
 
     private static bool QualifiersEqual(
-        SortedDictionary<string, string>? a,
-        SortedDictionary<string, string>? b
+        IReadOnlyDictionary<string, string>? a,
+        IReadOnlyDictionary<string, string>? b
     )
     {
         if (ReferenceEquals(a, b))
@@ -419,6 +423,26 @@ public sealed class PackageURL : IEquatable<PackageURL>
             }
         }
         return true;
+    }
+
+    private static void ValidateUnicode(string? value, string component)
+    {
+        if (value == null)
+        {
+            return;
+        }
+
+        try
+        {
+            s_utf8.GetByteCount(value);
+        }
+        catch (EncoderFallbackException exception)
+        {
+            throw new MalformedPackageUrlException(
+                $"The purl {component} contains invalid Unicode.",
+                exception
+            );
+        }
     }
 
     /// <summary>
@@ -459,13 +483,19 @@ public sealed class PackageURL : IEquatable<PackageURL>
 
         for (int i = 0; i < value.Length; i++)
         {
-            if (
-                value[i] == '%'
-                && i + 2 < value.Length
-                && IsHexDigit(value[i + 1])
-                && IsHexDigit(value[i + 2])
-            )
+            if (value[i] == '%')
             {
+                if (
+                    i + 2 >= value.Length
+                    || !IsHexDigit(value[i + 1])
+                    || !IsHexDigit(value[i + 2])
+                )
+                {
+                    throw new MalformedPackageUrlException(
+                        "A purl percent escape must contain two hexadecimal digits."
+                    );
+                }
+
                 int hi = HexVal(value[i + 1]);
                 int lo = HexVal(value[i + 2]);
                 byteBuffer[byteCount++] = (byte)((hi << 4) | lo);
@@ -475,7 +505,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
             {
                 if (byteCount > 0)
                 {
-                    int charCount = Encoding.UTF8.GetChars(
+                    int charCount = s_utf8.GetChars(
                         byteBuffer.Slice(0, byteCount),
                         outputArray.AsSpan(outputPos)
                     );
@@ -487,7 +517,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         }
         if (byteCount > 0)
         {
-            int charCount = Encoding.UTF8.GetChars(
+            int charCount = s_utf8.GetChars(
                 byteBuffer.Slice(0, byteCount),
                 outputArray.AsSpan(outputPos)
             );
@@ -503,13 +533,19 @@ public sealed class PackageURL : IEquatable<PackageURL>
         var byteBuffer = new List<byte>();
         for (int i = 0; i < value.Length; i++)
         {
-            if (
-                value[i] == '%'
-                && i + 2 < value.Length
-                && IsHexDigit(value[i + 1])
-                && IsHexDigit(value[i + 2])
-            )
+            if (value[i] == '%')
             {
+                if (
+                    i + 2 >= value.Length
+                    || !IsHexDigit(value[i + 1])
+                    || !IsHexDigit(value[i + 2])
+                )
+                {
+                    throw new MalformedPackageUrlException(
+                        "A purl percent escape must contain two hexadecimal digits."
+                    );
+                }
+
                 int hi = HexVal(value[i + 1]);
                 int lo = HexVal(value[i + 2]);
                 byteBuffer.Add((byte)((hi << 4) | lo));
@@ -519,7 +555,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
             {
                 if (byteBuffer.Count > 0)
                 {
-                    sb.Append(Encoding.UTF8.GetString(byteBuffer.ToArray()));
+                    sb.Append(s_utf8.GetString(byteBuffer.ToArray()));
                     byteBuffer.Clear();
                 }
                 sb.Append(value[i]);
@@ -527,7 +563,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         }
         if (byteBuffer.Count > 0)
         {
-            sb.Append(Encoding.UTF8.GetString(byteBuffer.ToArray()));
+            sb.Append(s_utf8.GetString(byteBuffer.ToArray()));
         }
         return sb.ToString();
     }
@@ -574,7 +610,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         }
 
         var sb = new StringBuilder(value.Length);
-        byte[] bytes = Encoding.UTF8.GetBytes(value);
+        byte[] bytes = s_utf8.GetBytes(value);
         foreach (byte b in bytes)
         {
             char c = (char)b;
@@ -613,7 +649,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         }
 
         int length = 0;
-        byte[] bytes = Encoding.UTF8.GetBytes(value);
+        byte[] bytes = s_utf8.GetBytes(value);
         foreach (byte b in bytes)
         {
             char c = (char)b;
@@ -637,7 +673,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
             return value.Length;
         }
 
-        byte[] bytes = Encoding.UTF8.GetBytes(value);
+        byte[] bytes = s_utf8.GetBytes(value);
         int pos = 0;
         foreach (byte b in bytes)
         {
@@ -667,11 +703,22 @@ public sealed class PackageURL : IEquatable<PackageURL>
             throw new MalformedPackageUrlException("The purl string is null or empty.");
         }
 
+        ValidateUnicode(purl, "string");
+        try
+        {
 #if NET8_0_OR_GREATER
-        ParseSpan(purl);
+            ParseSpan(purl);
 #else
-        ParseLegacy(purl);
+            ParseLegacy(purl);
 #endif
+        }
+        catch (DecoderFallbackException exception)
+        {
+            throw new MalformedPackageUrlException(
+                "The purl contains invalid percent-encoded UTF-8.",
+                exception
+            );
+        }
     }
 
 #if NET8_0_OR_GREATER
@@ -732,7 +779,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         int subpathIndex = remainder.IndexOf('#');
         if (subpathIndex >= 0)
         {
-            Subpath = ValidateSubpath(PercentDecodeSpan(remainder.Slice(subpathIndex + 1)));
+            Subpath = ParseSubpath(remainder.Slice(subpathIndex + 1).ToString());
             remainder = remainder.Slice(0, subpathIndex);
         }
 
@@ -829,11 +876,11 @@ public sealed class PackageURL : IEquatable<PackageURL>
         ValidateTypeConstraints();
     }
 
-    private static SortedDictionary<string, string> ValidateQualifiersSpan(
+    private static IReadOnlyDictionary<string, string>? ValidateQualifiersSpan(
         ReadOnlySpan<char> qualifiers
     )
     {
-        var list = new SortedDictionary<string, string>();
+        var list = new SortedDictionary<string, string>(StringComparer.Ordinal);
 
         while (qualifiers.Length > 0)
         {
@@ -853,32 +900,17 @@ public sealed class PackageURL : IEquatable<PackageURL>
             int eqIndex = pair.IndexOf('=');
             if (eqIndex >= 0)
             {
-                string key = pair.Slice(0, eqIndex).ToString().ToLowerInvariant();
+                string key = pair.Slice(0, eqIndex).ToString();
                 string value = PercentDecodeSpan(pair.Slice(eqIndex + 1));
-
-                if (!IsValidQualifierKey(key))
-                {
-                    throw new MalformedPackageUrlException(
-                        $"Invalid purl qualifier key: '{key}'. Keys must start with a letter and contain only letters, digits, '.', '_', or '-'."
-                    );
-                }
-
-                if (string.IsNullOrEmpty(value))
-                {
-                    continue;
-                }
-
-                if (list.ContainsKey(key))
-                {
-                    throw new MalformedPackageUrlException(
-                        $"Duplicate purl qualifier key: '{key}'."
-                    );
-                }
-
-                list.Add(key, value);
+                AddQualifier(list, key, value);
+            }
+            else
+            {
+                // Validate encoding even in ignored qualifier tokens.
+                _ = PercentDecodeSpan(pair);
             }
         }
-        return list;
+        return AsReadOnlyQualifiers(list);
     }
 #endif
 
@@ -933,7 +965,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         int subpathIndex = remainder.IndexOf('#');
         if (subpathIndex >= 0)
         {
-            Subpath = ValidateSubpath(PercentDecode(remainder.Substring(subpathIndex + 1)));
+            Subpath = ParseSubpath(remainder.Substring(subpathIndex + 1));
             remainder = remainder.Substring(0, subpathIndex);
         }
 
@@ -1042,6 +1074,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         {
             return null;
         }
+        ValidateUnicode(@namespace, "namespace");
         @namespace = @namespace.Trim('/');
         if (@namespace.Length == 0)
         {
@@ -1068,7 +1101,6 @@ public sealed class PackageURL : IEquatable<PackageURL>
             or "golang"
             or "hex"
             or "luarocks"
-            or "npm"
             or "pypi"
             or "qpkg"
             or "rpm"
@@ -1084,6 +1116,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         {
             throw new MalformedPackageUrlException("The purl name must not be empty.");
         }
+        ValidateUnicode(name, "name");
         return Type switch
         {
             "alpm"
@@ -1097,7 +1130,6 @@ public sealed class PackageURL : IEquatable<PackageURL>
             or "golang"
             or "hex"
             or "luarocks"
-            or "npm"
             or "oci"
             or "otp"
             or "pub"
@@ -1130,6 +1162,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         {
             return null;
         }
+        ValidateUnicode(version, "version");
         return Type switch
         {
             "huggingface" or "oci" or "pypi" or "vscode-extension" => version.ToLowerInvariant(),
@@ -1261,81 +1294,96 @@ public sealed class PackageURL : IEquatable<PackageURL>
         return true;
     }
 
-    private static SortedDictionary<string, string> ValidateQualifiers(string qualifiers)
+    private static IReadOnlyDictionary<string, string>? ValidateQualifiers(string qualifiers)
     {
-        var list = new SortedDictionary<string, string>();
+        var list = new SortedDictionary<string, string>(StringComparer.Ordinal);
         string[] pairs = qualifiers.Split('&');
         foreach (var pair in pairs)
         {
             int eqIndex = pair.IndexOf('=');
             if (eqIndex >= 0)
             {
-                string key = pair.Substring(0, eqIndex).ToLowerInvariant();
+                string key = pair.Substring(0, eqIndex);
                 string value = PercentDecode(pair.Substring(eqIndex + 1));
-
-                if (!IsValidQualifierKey(key))
-                {
-                    throw new MalformedPackageUrlException(
-                        $"Invalid purl qualifier key: '{key}'. Keys must start with a letter and contain only letters, digits, '.', '_', or '-'."
-                    );
-                }
-
-                if (string.IsNullOrEmpty(value))
-                {
-                    continue;
-                }
-
-                if (list.ContainsKey(key))
-                {
-                    throw new MalformedPackageUrlException(
-                        $"Duplicate purl qualifier key: '{key}'."
-                    );
-                }
-
-                list.Add(key, value);
+                AddQualifier(list, key, value);
+            }
+            else
+            {
+                // Validate encoding even in ignored qualifier tokens.
+                _ = PercentDecode(pair);
             }
         }
-        return list;
+        return AsReadOnlyQualifiers(list);
     }
 
     /// <summary>
     /// Validates pre-built qualifier entries, normalizing keys to lowercase and
     /// filtering out entries with empty values per ECMA-427 §5.6.6.
     /// </summary>
-    private static SortedDictionary<string, string>? ValidateQualifierEntries(
-        SortedDictionary<string, string>? qualifiers
+    private static IReadOnlyDictionary<string, string>? ValidateQualifierEntries(
+        IReadOnlyDictionary<string, string>? qualifiers
     )
     {
-        if (qualifiers == null || qualifiers.Count == 0)
+        if (qualifiers == null)
         {
-            return qualifiers;
+            return null;
         }
 
-        var normalized = new SortedDictionary<string, string>();
+        var normalized = new SortedDictionary<string, string>(StringComparer.Ordinal);
         foreach (var pair in qualifiers)
         {
-            string key = pair.Key.ToLowerInvariant();
+            AddQualifier(normalized, pair.Key, pair.Value);
+        }
+        return AsReadOnlyQualifiers(normalized);
+    }
 
-            if (!IsValidQualifierKey(key))
+    private static void AddQualifier(
+        SortedDictionary<string, string> qualifiers,
+        string key,
+        string value
+    )
+    {
+        if (!IsValidQualifierKey(key))
+        {
+            throw new MalformedPackageUrlException(
+                $"Invalid purl qualifier key: '{key}'. Keys must start with a letter and contain only letters, digits, '.', '_', or '-'."
+            );
+        }
+
+        ValidateUnicode(value, $"qualifier '{key}'");
+        if (string.IsNullOrEmpty(value))
+        {
+            return;
+        }
+
+        key = key.ToLowerInvariant();
+        if (qualifiers.ContainsKey(key))
+        {
+            throw new MalformedPackageUrlException($"Duplicate purl qualifier key: '{key}'.");
+        }
+
+        qualifiers.Add(key, value);
+    }
+
+    private static IReadOnlyDictionary<string, string>? AsReadOnlyQualifiers(
+        SortedDictionary<string, string> qualifiers
+    ) => qualifiers.Count == 0 ? null : new ReadOnlyDictionary<string, string>(qualifiers);
+
+    private static string? ParseSubpath(string subpath)
+    {
+        string[] segments = subpath.Split('/');
+        for (int i = 0; i < segments.Length; i++)
+        {
+            string decoded = PercentDecode(segments[i]);
+            if (decoded.IndexOf('/') >= 0)
             {
                 throw new MalformedPackageUrlException(
-                    $"Invalid purl qualifier key: '{key}'. Keys must start with a letter and contain only letters, digits, '.', '_', or '-'."
+                    "A purl subpath segment must not contain '/' when percent-decoded."
                 );
             }
-
-            if (string.IsNullOrEmpty(pair.Value))
-            {
-                continue;
-            }
-
-            if (normalized.ContainsKey(key))
-            {
-                throw new MalformedPackageUrlException($"Duplicate purl qualifier key: '{key}'.");
-            }
-
-            normalized.Add(key, pair.Value);
+            segments[i] = decoded;
         }
-        return normalized.Count > 0 ? normalized : null;
+        return ValidateSubpath(string.Join("/", segments));
     }
 
     private static string? ValidateSubpath(string? subpath)
@@ -1344,6 +1392,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
         {
             return null;
         }
+        ValidateUnicode(subpath, "subpath");
         string trimmed = subpath.Trim('/');
         if (trimmed.Length == 0)
         {

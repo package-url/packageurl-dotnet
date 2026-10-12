@@ -33,4 +33,12 @@ public class MalformedPackageUrlException : Exception
     /// <param name="message">A description of the parsing error.</param>
     public MalformedPackageUrlException(string message)
         : base(message) { }
+
+    /// <summary>
+    /// Creates a new <see cref="MalformedPackageUrlException" /> with the specified cause.
+    /// </summary>
+    /// <param name="message">A description of the parsing error.</param>
+    /// <param name="innerException">The exception that caused the parsing error.</param>
+    public MalformedPackageUrlException(string message, Exception innerException)
+        : base(message, innerException) { }
 }
