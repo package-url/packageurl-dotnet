@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/package-url/purl-spec",
+  "tag": "v1.1.0",
+  "commit": "7cd2d3442fb9c88155db17ada7c911b40ec22d41",
+  "test_schema": "schemas/purl-test.schema-0.2.json",
+  "fixture_sources": [
+    "tests/spec/specification-test.json",
+    "tests/types/*-test.json"
+  ],
+  "type_definition_sources": "types/*-definition.json",
+  "scope": "Source for the vendored fixtures and fixture-backed handwritten type rules; not a claim of full specification conformance."
+}

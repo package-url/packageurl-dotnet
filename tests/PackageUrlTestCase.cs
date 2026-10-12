@@ -24,7 +24,7 @@ using Xunit.Sdk;
 namespace PackageUrl.Tests;
 
 /// <summary>
-/// A single test case from the purl-spec test suite (schema v0.1).
+/// A single test case from the purl-spec test suite (schema v0.2).
 /// </summary>
 public sealed class PackageUrlTestCase : IXunitSerializable
 {
@@ -37,15 +37,15 @@ public sealed class PackageUrlTestCase : IXunitSerializable
     public string TestGroup { get; set; } = "";
     public string TestType { get; set; } = "";
     public bool ExpectedFailure { get; set; }
-    public string? ExpectedFailureReason { get; set; }
+    public string? ExpectedMessage { get; set; }
 
-    /// <summary>Input purl string (for parse/roundtrip tests).</summary>
+    /// <summary>Input purl string (for parse/validate tests).</summary>
     public string? InputPurl { get; set; }
 
     /// <summary>Input components (for build tests).</summary>
     public PackageUrlComponents? InputComponents { get; set; }
 
-    /// <summary>Expected canonical purl string (for build/roundtrip tests).</summary>
+    /// <summary>Expected canonical purl string (for build/validate tests).</summary>
     public string? ExpectedPurl { get; set; }
 
     /// <summary>Expected parsed components (for parse tests).</summary>
@@ -61,7 +61,7 @@ public sealed class PackageUrlTestCase : IXunitSerializable
         TestGroup = info.GetValue<string>(nameof(TestGroup)) ?? "";
         TestType = info.GetValue<string>(nameof(TestType)) ?? "";
         ExpectedFailure = info.GetValue<bool>(nameof(ExpectedFailure));
-        ExpectedFailureReason = info.GetValue<string?>(nameof(ExpectedFailureReason));
+        ExpectedMessage = info.GetValue<string?>(nameof(ExpectedMessage));
         InputPurl = info.GetValue<string?>(nameof(InputPurl)) ?? "";
         ExpectedPurl = info.GetValue<string?>(nameof(ExpectedPurl)) ?? "";
 
@@ -86,7 +86,7 @@ public sealed class PackageUrlTestCase : IXunitSerializable
         info.AddValue(nameof(TestGroup), TestGroup);
         info.AddValue(nameof(TestType), TestType);
         info.AddValue(nameof(ExpectedFailure), ExpectedFailure);
-        info.AddValue(nameof(ExpectedFailureReason), ExpectedFailureReason);
+        info.AddValue(nameof(ExpectedMessage), ExpectedMessage);
         info.AddValue(nameof(InputPurl), InputPurl);
         info.AddValue(nameof(ExpectedPurl), ExpectedPurl);
         info.AddValue(
