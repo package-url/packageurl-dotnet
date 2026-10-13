@@ -23,11 +23,11 @@ using Xunit;
 namespace PackageUrl.Tests;
 
 /// <summary>
-/// Test cases for PackageURL parsing, building, and roundtripping.
+/// Test cases for PackageURL parsing, building, and validation with normalization.
 /// </summary>
 /// <remarks>
-/// Test cases retrieved from: https://github.com/package-url/purl-spec
-/// Schema: https://github.com/package-url/purl-spec/blob/main/schemas/purl-test.schema-0.1.json
+/// Source revision and paths are recorded in TestAssets/purl-spec.json.
+/// Schema: https://packageurl.org/schemas/purl-test.schema-0.2.json
 /// </remarks>
 public class PackageUrlSpecificationTests
 {
@@ -95,8 +95,8 @@ public class PackageUrlSpecificationTests
     }
 
     [Theory]
-    [PackageUrlTestData("TestAssets", "roundtrip")]
-    public void TestRoundtrip(PackageUrlTestCase data)
+    [PackageUrlTestData("TestAssets", "validate")]
+    public void TestValidation(PackageUrlTestCase data)
     {
         if (data.ExpectedFailure)
         {
