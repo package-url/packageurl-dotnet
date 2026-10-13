@@ -1094,6 +1094,7 @@ public sealed class PackageURL : IEquatable<PackageURL>
             "alpm"
             or "apk"
             or "bitbucket"
+            or "brew"
             or "composer"
             or "deb"
             or "github"
@@ -1123,6 +1124,8 @@ public sealed class PackageURL : IEquatable<PackageURL>
             or "apk"
             or "bitbucket"
             or "bitnami"
+            or "brew"
+            or "chrome-extension"
             or "composer"
             or "deb"
             or "github"
@@ -1198,16 +1201,24 @@ public sealed class PackageURL : IEquatable<PackageURL>
                 }
                 break;
             case "cpan":
-                if (Namespace == null)
-                {
-                    throw new MalformedPackageUrlException(
-                        "A cpan purl must have a namespace (author)."
-                    );
-                }
                 if (Name.Contains("::"))
                 {
                     throw new MalformedPackageUrlException(
                         "A cpan distribution name must not contain '::'."
+                    );
+                }
+                break;
+            case "chrome-extension":
+                if (!IsValidChromeExtensionName(Name))
+                {
+                    throw new MalformedPackageUrlException(
+                        "A chrome-extension purl name must be 32 letters from 'a' to 'p'."
+                    );
+                }
+                if (Version != null && !IsValidChromeExtensionVersion(Version))
+                {
+                    throw new MalformedPackageUrlException(
+                        "A chrome-extension purl version must have one to four dot-separated groups of ASCII digits."
                     );
                 }
                 break;
@@ -1261,6 +1272,45 @@ public sealed class PackageURL : IEquatable<PackageURL>
                 }
                 break;
         }
+    }
+
+    private static bool IsValidChromeExtensionName(string name)
+    {
+        if (name.Length != 32)
+        {
+            return false;
+        }
+        foreach (char c in name)
+        {
+            if (c < 'a' || c > 'p')
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static bool IsValidChromeExtensionVersion(string version)
+    {
+        int segments = 1;
+        bool needsDigit = true;
+        foreach (char c in version)
+        {
+            if (c >= '0' && c <= '9')
+            {
+                needsDigit = false;
+            }
+            else if (c == '.' && !needsDigit && segments < 4)
+            {
+                segments++;
+                needsDigit = true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        return !needsDigit;
     }
 
     private static bool IsValidQualifierKey(string key)
